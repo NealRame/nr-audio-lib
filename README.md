@@ -1,4 +1,4 @@
-nraudio-lib
+nr-audio-lib
 ===========
 
 C++ audio library.
