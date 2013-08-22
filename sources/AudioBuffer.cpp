@@ -51,7 +51,7 @@ struct Resampler<float, DEST> {
 Buffer::Buffer(Format format) :
 	_format(format),
 	_frameCount(0),
-	_samples(0) {
+	_samples(nullptr) {
 }
 
 Buffer::Buffer(Format format, size_t size, char *samples) :
@@ -67,7 +67,7 @@ Buffer::~Buffer() {
 }
 
 bool Buffer::isNull() const {
-	return _samples == NULL;
+	return _samples == nullptr;
 }
 
 Format Buffer::format() const {
@@ -84,13 +84,13 @@ double Buffer::duration() const {
 
 size_t Buffer::readFrame(const char *src, float *dst) const {
 	size_t size = 0;
-	for (unsigned int i = 0, count = _format.channelCount; i< count; ++i) {
-		switch (_format.bitDepth) {
-		case Format::BitDepth_8:
+	for (unsigned int i = 0, count = _format.channelCount(), depth = _format.bitDepth(); i< count; ++i) {
+		switch (depth) {
+		case 8:
 			dst[i] = static_cast<float>(src[i])/std::numeric_limits<int8_t>::max();
 			size += 1;
 			break;
-		case Format::BitDepth_16:
+		case 16:
 			dst[i] = static_cast<float>(*((int16_t *)src + i))/std::numeric_limits<int16_t>::max();
 			size += 2;
 			break;
@@ -101,12 +101,12 @@ size_t Buffer::readFrame(const char *src, float *dst) const {
 
 size_t Buffer::readFrame(const char *src, float **dst, unsigned int frame_index) const {
 	size_t size = 0;
-	for (unsigned int i = 0, count = _format.channelCount; i < count; ++i) {
-		switch (_format.bitDepth) {
-		case Format::BitDepth_8:
+	for (unsigned int i = 0, count = _format.channelCount(), depth = _format.bitDepth(); i < count; ++i) {
+		switch (depth) {
+		case 8:
 			dst[i][frame_index] = static_cast<float>(src[i])/std::numeric_limits<int8_t>::max();
 			break;
-		case Format::BitDepth_16:
+		case 16:
 			dst[i][frame_index] = static_cast<float>(*((int16_t *)src + i))/std::numeric_limits<int16_t>::max();
 			break;
 		}
@@ -132,13 +132,14 @@ unsigned int Buffer::read(unsigned int offset, unsigned int frameCount, int8_t *
 		frameCount = (offset < _frameCount) ? _frameCount - offset : 0;
 	}
 	char *ptr = _samples + _format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, (int8_t *)ptr, dst);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, (int8_t *)ptr, dst);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, (int8_t *)ptr, dst);
+	case 16:
+		_transfer(frameCount, channel_count, (int8_t *)ptr, dst);
 		break;
 	}
 	return frameCount;
@@ -149,13 +150,14 @@ unsigned int Buffer::read(unsigned int offset, unsigned int frameCount, int16_t 
 		frameCount = (offset < _frameCount) ? _frameCount - offset : 0;
 	}
 	char *ptr = _samples + _format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, (int8_t *)ptr, dst);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, (int8_t *)ptr, dst);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, (int8_t *)ptr, dst);
+	case 16:
+		_transfer(frameCount, channel_count, (int8_t *)ptr, dst);
 		break;
 	}
 	return frameCount;
@@ -166,13 +168,14 @@ unsigned int Buffer::read(unsigned int offset, unsigned int frameCount, float *d
 		frameCount = (offset < _frameCount) ? _frameCount - offset : 0;
 	}
 	char *ptr = _samples + _format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, (int8_t *)ptr, dst);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, (int8_t *)ptr, dst);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, (int16_t *)ptr, dst);
+	case 16:
+		_transfer(frameCount, channel_count, (int16_t *)ptr, dst);
 		break;
 	}
 	return frameCount;
@@ -183,13 +186,14 @@ void Buffer::write(unsigned int offset, unsigned int frameCount, const int8_t *s
 		resize(offset + frameCount);
 	}
 	char *ptr = _samples + _format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, src, (int8_t *)ptr);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, src, (int8_t *)ptr);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, src, (int16_t *)ptr);
+	case 16:
+		_transfer(frameCount, channel_count, src, (int16_t *)ptr);
 		break;
 	}
 }
@@ -199,13 +203,14 @@ void Buffer::write(unsigned int offset, unsigned int frameCount, const int16_t *
 		resize(offset + frameCount);
 	}
 	char *ptr = _samples + _format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, src, (int8_t *)ptr);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, src, (int8_t *)ptr);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, src, (int16_t *)ptr);
+	case 16:
+		_transfer(frameCount, channel_count, src, (int16_t *)ptr);
 		break;
 	}
 }
@@ -215,13 +220,14 @@ void Buffer::write(unsigned int offset, unsigned int frameCount, const float *sr
 		resize(offset + frameCount);
 	}
 	char *ptr = _samples + _format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, src, (int8_t *)ptr);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, src, (int8_t *)ptr);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, src, (int16_t *)ptr);
+	case 16:
+		_transfer(frameCount, channel_count, src, (int16_t *)ptr);
 		break;
 	}
 }
@@ -249,13 +255,14 @@ unsigned int Buffer::read(unsigned int offset, unsigned int frameCount, int8_t *
 		frameCount = (offset < _frameCount) ? _frameCount - offset : 0;
 	}
 	char *ptr = _samples +_format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, (int8_t *)ptr, dst);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, (int8_t *)ptr, dst);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, (int16_t *)ptr, dst);
+	case 16:
+		_transfer(frameCount, channel_count, (int16_t *)ptr, dst);
 		break;
 	}
 	return frameCount;
@@ -266,13 +273,14 @@ unsigned int Buffer::read(unsigned int offset, unsigned int frameCount, int16_t 
 		frameCount = (offset < _frameCount) ? _frameCount - offset : 0;
 	}
 	char *ptr = _samples +_format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, (int8_t *)ptr, dst);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, (int8_t *)ptr, dst);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, (int16_t *)ptr, dst);
+	case 16:
+		_transfer(frameCount, channel_count, (int16_t *)ptr, dst);
 		break;
 	}
 	return frameCount;
@@ -283,13 +291,14 @@ unsigned int Buffer::read(unsigned int offset, unsigned int frameCount, float **
 		frameCount = (offset < _frameCount) ? _frameCount - offset : 0;
 	}
 	char *ptr = _samples +_format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, (int8_t *)ptr, dst);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, (int8_t *)ptr, dst);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, (int16_t *)ptr, dst);
+	case 16:
+		_transfer(frameCount, channel_count, (int16_t *)ptr, dst);
 		break;
 	}
 	return frameCount;
@@ -300,13 +309,14 @@ void Buffer::write(unsigned int offset, unsigned int frameCount, const int8_t **
 		resize(offset + frameCount);
 	}
 	char *ptr = _samples + _format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, src, (int8_t *)ptr);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, src, (int8_t *)ptr);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, src, (int16_t *)ptr);
+	case 16:
+		_transfer(frameCount, channel_count, src, (int16_t *)ptr);
 		break;
 	}
 }
@@ -316,13 +326,14 @@ void Buffer::write(unsigned int offset, unsigned int frameCount, const int16_t *
 		resize(offset + frameCount);
 	}
 	char *ptr = _samples + _format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, src, (int8_t *)ptr);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, src, (int8_t *)ptr);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, src, (int16_t *)ptr);
+	case 16:
+		_transfer(frameCount, channel_count, src, (int16_t *)ptr);
 		break;
 	}
 }
@@ -332,13 +343,14 @@ void Buffer::write(unsigned int offset, unsigned int frameCount, const float **s
 		resize(offset + frameCount);
 	}
 	char *ptr = _samples + _format.sizeForFrameCount(offset);
-	switch (_format.bitDepth) {
-	case Format::BitDepth_8:
-		_transfer(frameCount, _format.channelCount, src, (int8_t *)ptr);
+	unsigned int channel_count = _format.channelCount();
+	switch (_format.bitDepth()) {
+	case 8:
+		_transfer(frameCount, channel_count, src, (int8_t *)ptr);
 		break;
 
-	case Format::BitDepth_16:
-		_transfer(frameCount, _format.channelCount, src, (int16_t *)ptr);
+	case 16:
+		_transfer(frameCount, channel_count, src, (int16_t *)ptr);
 		break;
 	}
 }

@@ -29,11 +29,17 @@ std::string Error::statusToString(Error::Status status) {
 	case Status::IOError:
 		return "audio::IOError";
 
-	case Status::LameDecodingFailed:
-		return "audio::LameDecodingFailed";
+	case Status::FormatBadValue:
+		return "audio::FormatBadValue";
 
-	case Status::LameInitializationFailed:
-		return "audio::LameInitializationFailed";
+	case Status::MP3CodecError:
+		return "audio::MP3CodecError";
+
+	case Status::OggVorbisError:
+		return "audio::OggVorbisError";
+
+	case Status::PCMError:
+		return "audio::PCMError";
 
 	case Status::NoSuitableDecoder:
 		return "audio::NoSuitableDecoder";

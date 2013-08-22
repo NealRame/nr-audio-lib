@@ -9,6 +9,7 @@
 #define FORMAT_H_
 
 #include <cstdlib>
+#include <cstdint>
 
 namespace com {
 namespace nealrame {
@@ -16,30 +17,24 @@ namespace audio {
 
 class Format {
 public:
-	enum SampleRate {
-		SampleRate_8000  =  8000,
-		SampleRate_16000 = 16000,
-		SampleRate_22050 = 22050,
-		SampleRate_44100 = 44100,
-		SampleRate_48000 = 48000,
-		SampleRate_96000 = 96000
-	};
-
-	enum BitDepth {
-		BitDepth_8  = 0x08,
-		BitDepth_16 = 0x10
-	};
-
+	Format(unsigned int channel_count, unsigned int sample_rate, unsigned int bit_depth);
+	
 public:
-	unsigned int channelCount;
-	SampleRate sampleRate;
-	BitDepth bitDepth;
-
-public:
+	unsigned int channelCount() const { return _channelCount; }
+	Format & setChannelCount(unsigned int);
+	unsigned int sampleRate() const { return _sampleRate; }
+	Format & setSampleRate(unsigned int);
+	unsigned int bitDepth() const { return _bitDepth; }
+	Format & setBitDepth(unsigned int);
 	double durationForFrameCount(unsigned int) const;
 	unsigned int frameCountForDuration(double) const;
 	size_t sizeForFrameCount(unsigned int frameCount) const;
 	unsigned int frameCountForSize(size_t size) const;
+
+private:
+	unsigned int _channelCount;
+	unsigned int _sampleRate;
+	unsigned int _bitDepth;
 };
 
 } /* namespace audio */

@@ -13,6 +13,7 @@ extern "C" {
 #include <cstring>
 #include <cstdint>
 #include <iostream>
+#include <sstream>
 
 #include <boost/format.hpp>
 #include <boost/detail/endian.hpp>
@@ -27,6 +28,10 @@ extern "C" {
 namespace com {
 namespace nealrame {
 namespace audio {
+
+//////////////////////////////////////////////////////////////////////////////
+// Decoder ///////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 u_int32_t synchsafe(u_int32_t in) {
 #if defined (BOOST_LITTLE_ENDIAN)
@@ -130,7 +135,9 @@ void skip_album_id_section(std::ifstream &input) {
 	} while (! stop);
 }
 
-struct RAIIDecodeData {
+struct RAII_MP3DecoderData {
+	std::ifstream &input;
+	std::ifstream::iostate input_state;
 	hip_global_flags *hip;
 	mp3data_struct format;
 	int16_t *pcm_buffer[2];
@@ -138,18 +145,27 @@ struct RAIIDecodeData {
 	int enc_padding;
 	Buffer *audio_buffer;
 
-	RAIIDecodeData( ) {
+	RAII_MP3DecoderData(std::ifstream &in) :
+		input(in) {
+
+		input_state = input.exceptions();
+		input.exceptions(std::ifstream::badbit);
+
 		if ((hip = hip_decode_init()) == nullptr) {
-			Error::raise(Error::Status::LameInitializationFailed);
+			Error::raise(Error::Status::MP3CodecError, "Failed to init lame encoder.");
 		}
+
 		memset(&format, 0, sizeof(format));
+
 		pcm_buffer[0] = new int16_t[1152];
 		pcm_buffer[1] = new int16_t[1152];
 		enc_delay = enc_padding = 0;
+
 		audio_buffer = nullptr;
 	}
 
-	virtual ~RAIIDecodeData( ) {
+	virtual ~RAII_MP3DecoderData() {
+		input.exceptions(input_state);
 		if (audio_buffer != nullptr) delete audio_buffer;
 		if (hip != nullptr) hip_decode_exit(hip);
 		delete pcm_buffer[0];
@@ -157,7 +173,7 @@ struct RAIIDecodeData {
 	}
 };
 
-#if defined DEBUG
+#if defined(DEBUG)
 #	define DEBUG_MP3_FORMAT_HEADER(FMT) \
 do { \
 	std::cerr << "total frames  : " << (FMT).totalframes << std::endl; \
@@ -170,48 +186,51 @@ do { \
 #endif
 
 Buffer * MP3Decoder::decode(std::ifstream &input) const {
+	RAII_MP3DecoderData decode_data(input);
+
 	skip_id3_sections(input);
 	skip_album_id_section(input);
 
-	RAIIDecodeData decode_data;
-
-	u_int8_t buffer[512];
+	uint8_t buffer[512];
 	int len, offset = 0, ret = 0;
 
 	while (decode_data.format.header_parsed == 0) {
 		input.read((char *)buffer, sizeof(buffer));
-		if (input.fail()) {
-			Error::raise(Error::Status::IOError);
-		}
-
 		len = input.gcount();
+
+		if (len == 0) {
+			Error::raise(Error::Status::IOError, "The file is truncated.");
+		}
 
 		if ((ret = hip_decode1_headersB(
 				decode_data.hip, buffer, len,
-				decode_data.pcm_buffer[0], decode_data.pcm_buffer[1],
-				&decode_data.format, &decode_data.enc_delay, &decode_data.enc_padding)) < 0) {
-			Error::raise(Error::Status::LameDecodingFailed);
+				decode_data.pcm_buffer[0], 
+				decode_data.pcm_buffer[1],
+				&decode_data.format, 
+				&decode_data.enc_delay, 
+				&decode_data.enc_padding)) < 0) {
+			Error::raise(Error::Status::MP3CodecError);
 		}
 	}
 
 	if (decode_data.format.bitrate == 0) {
-		Error::raise(Error::Status::LameDecodingFailed);
+		Error::raise(Error::Status::MP3CodecError);
 	}
 
 	DEBUG_MP3_FORMAT_HEADER(decode_data.format);
 
 	decode_data.audio_buffer =
 		new Buffer(
-			Format{(unsigned int)decode_data.format.stereo,
-			(Format::SampleRate)decode_data.format.samplerate,
-			Format::BitDepth_16});
+			Format((unsigned int)decode_data.format.stereo, 
+				(unsigned int)decode_data.format.samplerate, 
+				16));
 
 	len = 0;
 	if ((ret = hip_decode1_headers(
 			decode_data.hip, buffer, len,
 			decode_data.pcm_buffer[0], decode_data.pcm_buffer[1],
 			&decode_data.format)) < 0) {
-		Error::raise(Error::Status::LameDecodingFailed);
+		Error::raise(Error::Status::MP3CodecError);
 	}
 
 	decode_data.audio_buffer->write(offset, ret, (const int16_t **)decode_data.pcm_buffer);
@@ -219,16 +238,19 @@ Buffer * MP3Decoder::decode(std::ifstream &input) const {
 
 	do {
 		input.read((char *)buffer, sizeof(buffer));
-		if (input.bad()) {
-			Error::raise(Error::Status::IOError);
-		}
 		len = input.gcount();
+
+		int pos = input.tellg();
+
+		if (pos > 0) {
+			std::cerr << pos << std::endl;
+		}
 
 		if ((ret = hip_decode1_headers(
 				decode_data.hip, buffer, len,
 				decode_data.pcm_buffer[0], decode_data.pcm_buffer[1],
 				&decode_data.format)) < 0) {
-			Error::raise(Error::Status::LameDecodingFailed);
+			Error::raise(Error::Status::MP3CodecError);
 		}
 
 		decode_data.audio_buffer->write(offset, ret, (const int16_t **)decode_data.pcm_buffer);
@@ -241,7 +263,139 @@ Buffer * MP3Decoder::decode(std::ifstream &input) const {
 	return audio_buffer;
 }
 
-void MP3Coder::encode(const Buffer &, std::ofstream &) const {
+//////////////////////////////////////////////////////////////////////////////
+// Coder /////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+int lame_quality(Coder::Quality quality) {
+	switch (quality) {
+	case Coder::Quality::Best: return 0;
+	case Coder::Quality::Good: return 2;
+	case Coder::Quality::Acceptable: return 5;
+	case Coder::Quality::Fastest: return 7;
+	}
+	return 0;
+}
+
+#define ERR_HANDLER_DEFAULT_BUFFER_SIZE 128
+#define MP3_ENCODE_INPUT_BUFFER_SIZE   1024
+
+void error_handler(const char *fmt, va_list ap) {
+	char **buffer = nullptr;
+	size_t buffer_size = ERR_HANDLER_DEFAULT_BUFFER_SIZE;
+	bool again;
+	do {
+		size_t written;
+		*buffer = (char *)realloc(*buffer, buffer_size);
+
+		written = vsnprintf(*buffer, buffer_size, fmt, ap);
+
+		if (written >= buffer_size) {
+			again = true;
+			buffer_size = written;
+		} else {
+			again = false;
+		}
+	} while (again);
+	Error::raise(Error::Status::MP3CodecError, std::string(*buffer));
+}
+
+#if defined(DEBUG)
+void debug_handler(const char *, va_list ap) {
+	fvprintf(stderr, "%s\n", ap);
+}
+
+void message_handler(const char *, va_list) {
+	fvprintf(stderr, "%s\n", ap);
+}
+#else
+void debug_handler(const char *, va_list) {}
+void message_handler(const char *, va_list) {}
+#endif
+
+struct RAII_MP3CoderData {
+	std::ofstream &output;
+	std::ofstream::iostate output_state;
+	lame_t gfp;
+	int mp3_output_buffer_size, mp3_input_buffer_size;
+	char *mp3_output_buffer;
+	float *mp3_input_buffer;
+
+	RAII_MP3CoderData(const MP3Coder &coder, const Buffer &buffer, std::ofstream &out) :
+		output(out) {
+
+		output_state = output.exceptions();
+		output.exceptions(std::ofstream::failbit | std::ofstream::badbit );
+
+		if ((gfp = lame_init()) == nullptr) {
+			Error::raise(Error::Status::MP3CodecError, "Failed to init lame encoder.");
+		}
+
+		lame_set_errorf(gfp, error_handler);
+		lame_set_debugf(gfp, debug_handler);
+		lame_set_msgf  (gfp, message_handler);
+
+		Format format = buffer.format();
+
+		mp3_output_buffer_size = 1.25*buffer.frameCount() + 7200;
+		mp3_output_buffer = 
+			new char[mp3_output_buffer_size];
+
+		mp3_input_buffer_size = format.channelCount()*MP3_ENCODE_INPUT_BUFFER_SIZE;
+		mp3_input_buffer = 
+			new float[mp3_input_buffer_size];
+
+		lame_set_num_channels(gfp, format.channelCount());
+		lame_set_in_samplerate(gfp, format.sampleRate());
+		lame_set_quality(gfp, lame_quality(coder.quality()));
+		lame_set_bWriteVbrTag(gfp, 0);
+
+		lame_init_params(gfp);
+	}
+
+	virtual ~RAII_MP3CoderData( ) {
+		if (gfp != nullptr) {
+			lame_close(gfp);
+			delete[] mp3_output_buffer;
+			delete[] mp3_input_buffer;
+		}
+		output.exceptions(output_state);
+	}
+};
+
+void MP3Coder::encode(const Buffer &buffer, std::ofstream &out) const {
+	RAII_MP3CoderData encode_data(*this, buffer, out);
+
+	unsigned int offset = 0;
+	int nbytes;
+
+	do {
+		unsigned int count = buffer.read(offset, MP3_ENCODE_INPUT_BUFFER_SIZE, encode_data.mp3_input_buffer);
+
+		nbytes = lame_encode_buffer_interleaved_ieee_float(
+				encode_data.gfp, 
+				encode_data.mp3_input_buffer, 
+				count,
+				(unsigned char *)encode_data.mp3_output_buffer,
+				encode_data.mp3_output_buffer_size);
+
+		if (nbytes >= 0) {
+			out.write((char *)encode_data.mp3_output_buffer, nbytes);
+		} else {
+			Error::raise(Error::Status::MP3CodecError,
+				(boost::format("Lame encode error code: %1%") % nbytes).str());
+		}
+
+		offset += count;
+	} while (offset < buffer.frameCount());
+
+	nbytes = lame_encode_flush(encode_data.gfp,
+				(unsigned char *)encode_data.mp3_output_buffer,
+				encode_data.mp3_output_buffer_size);
+
+	if (nbytes >= 0) {
+		out.write((char *)encode_data.mp3_output_buffer, nbytes);
+	}
 }
 
 } /* namespace audio */

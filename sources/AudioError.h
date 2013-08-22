@@ -19,8 +19,10 @@ public:
 	enum class Status {
 		Success,
 		IOError,
-		LameDecodingFailed,
-		LameInitializationFailed,
+		FormatBadValue,
+		MP3CodecError,
+		OggVorbisError,
+		PCMError,
 		NoSuitableDecoder,
 		NotImplemented,
 		UndefinedFormat,

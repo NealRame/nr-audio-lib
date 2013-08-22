@@ -69,124 +69,122 @@ struct WaveDataChunk {
 #define debug_wave_data_chunk(...)
 #endif
 
+//////////////////////////////////////////////////////////////////////////////
+// Decoder ///////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+struct RAII_PCMDecoderData {
+	std::ifstream &input;
+	std::ifstream::iostate input_state;
+	char *samples;
+
+	RAII_PCMDecoderData(std::ifstream &in) :
+		input(in) {
+		samples = nullptr;
+		input_state = input.exceptions();
+		input.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	}
+
+	virtual ~RAII_PCMDecoderData() {
+		input.exceptions(input_state);
+		if (samples != nullptr) free(samples);
+	}
+};
+
 Buffer * PCMDecoder::decode(std::ifstream &in) const {
-	if (! in.good()) {
-		Error::raise(Error::Status::IOError);
+	RAII_PCMDecoderData decode_data(in);
+	Buffer *buffer = nullptr;
+
+	try {
+		RIFFHeaderChunk header_chunk;
+		in.readsome((char *)&header_chunk, sizeof(RIFFHeaderChunk));
+		if (strncmp(header_chunk.id, "RIFF", 4) != 0
+			&& strncpy(header_chunk.format, "WAVE", 4) != 0) {
+			Error::raise(Error::Status::PCMError, "Bad file format.");
+		}
+		debug_riff_header_chunk(header_chunk);
+
+		WaveFormatChunk format_chunk;
+		in.readsome((char *)&format_chunk, sizeof(WaveFormatChunk));
+		if (strncmp(format_chunk.id, "fmt ", 4) != 0) {
+			Error::raise(Error::Status::PCMError, "Bad file format.");
+		}
+		debug_wave_format_chunk(format_chunk);
+
+		WaveDataChunk data_chunk;
+		in.readsome((char *)&data_chunk, sizeof(WaveDataChunk));
+		if (strncmp(data_chunk.id, "data", 4) != 0) {
+			Error::raise(Error::Status::PCMError, "Bad file format.");
+		}
+		debug_wave_data_chunk(data_chunk);
+
+		Format format(format_chunk.channelCount, format_chunk.sampleRate, format_chunk.bitPerSample);
+
+		decode_data.samples = (char *) malloc(data_chunk.size);
+
+		in.read(decode_data.samples, data_chunk.size);
+		buffer = new Buffer(format, data_chunk.size, decode_data.samples);
+		decode_data.samples = nullptr;
+
+	} catch (std::ifstream::failure ioerr) {
+		Error::raise(Error::Status::IOError, ioerr.what());
 	}
 
-	RIFFHeaderChunk header_chunk;
-
-	if (in.readsome((char *)&header_chunk, sizeof(RIFFHeaderChunk)) != sizeof(RIFFHeaderChunk)) {
-		return NULL;
-	}
-
-	if (strncmp(header_chunk.id, "RIFF", 4) != 0
-		&& strncpy(header_chunk.format, "WAVE", 4) != 0) {
-		return NULL;
-	}
-
-	debug_riff_header_chunk(header_chunk);
-
-	WaveFormatChunk format_chunk;
-
-	if (in.readsome((char *)&format_chunk, sizeof(WaveFormatChunk)) != sizeof(WaveFormatChunk)) {
-		return NULL;
-	}
-
-	if (strncmp(format_chunk.id, "fmt ", 4) != 0) {
-		return NULL;
-	}
-
-	debug_wave_format_chunk(format_chunk);
-
-	WaveDataChunk data_chunk;
-
-	if (in.readsome((char *)&data_chunk, sizeof(WaveDataChunk)) != sizeof(WaveDataChunk)) {
-		return NULL;
-	}
-
-	if (strncmp(data_chunk.id, "data", 4) != 0) {
-		return NULL;
-	}
-
-	debug_wave_data_chunk(data_chunk);
-
-	Format format;
-
-	format.channelCount = format_chunk.channelCount;
-
-	switch (format_chunk.sampleRate) {
-	case Format::SampleRate_8000:
-	case Format::SampleRate_16000:
-	case Format::SampleRate_22050:
-	case Format::SampleRate_44100:
-	case Format::SampleRate_48000:
-	case Format::SampleRate_96000:
-		format.sampleRate = static_cast<Format::SampleRate>(format_chunk.sampleRate);
-		break;
-	default:
-		return NULL;
-	}
-
-	switch (format_chunk.bitPerSample) {
-	case Format::BitDepth_8:
-	case Format::BitDepth_16:
-		format.bitDepth = static_cast<Format::BitDepth>(format_chunk.bitPerSample);
-		break;
-	default:
-		return NULL;
-	}
-
-	char *samples = new char[data_chunk.size];
-
-	in.read(samples, data_chunk.size);
-
-	if (in && static_cast<uint32_t>(in.gcount()) == data_chunk.size) {
-		return new Buffer(format, data_chunk.size, samples);
-	}
-
-	delete samples;
-	return NULL;
+	return buffer;
 }
 
-void PCMCoder::encode(const Buffer &buffer, std::ofstream &out) const {
-	if (! out.good()) {
-		Error::raise(Error::Status::IOError);
+//////////////////////////////////////////////////////////////////////////////
+// Coder /////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+struct RAII_PCMCoderData {
+	std::ofstream &output;
+	std::ofstream::iostate output_state;
+
+	RAII_PCMCoderData(std::ofstream &out) :
+		output(out) {
+		output_state = output.exceptions();
+		output.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	}
 
-	Format fmt = buffer.format();
+	virtual ~RAII_PCMCoderData() {
+		output.exceptions(output_state);
+	}
+};
 
+void PCMCoder::encode(const Buffer &buffer, std::ofstream &out) const {
 	RIFFHeaderChunk header_chunk;
 
-	memcpy(header_chunk.id,     "RIFF", 4);
-	memcpy(header_chunk.format, "WAVE", 4);
-	header_chunk.size = 4 + sizeof(WaveFormatChunk) + sizeof(WaveDataChunk) + fmt.sizeForFrameCount(buffer.frameCount());
+	try {
+		Format fmt = buffer.format();
 
-	debug_riff_header_chunk(header_chunk);
-	out.write((const char *)&header_chunk, sizeof(RIFFHeaderChunk));
+		memcpy(header_chunk.id,     "RIFF", 4);
+		memcpy(header_chunk.format, "WAVE", 4);
+		header_chunk.size = 4 + sizeof(WaveFormatChunk) + sizeof(WaveDataChunk) + fmt.sizeForFrameCount(buffer.frameCount());
+		debug_riff_header_chunk(header_chunk);
+		out.write((const char *)&header_chunk, sizeof(RIFFHeaderChunk));
 
-	WaveFormatChunk wave_format;
+		WaveFormatChunk wave_format;
+		memcpy(wave_format.id, "fmt ", 4);
+		wave_format.size = sizeof(WaveFormatChunk) - sizeof(wave_format.id) - sizeof(wave_format.size);
+		wave_format.audioFormat = 1;
+		wave_format.channelCount = fmt.channelCount();
+		wave_format.sampleRate = fmt.sampleRate();
+		wave_format.byteRate = fmt.sizeForFrameCount(fmt.sampleRate());
+		wave_format.bytePerFrame = fmt.sizeForFrameCount(1);
+		wave_format.bitPerSample = fmt.bitDepth();
+		debug_wave_format_chunk(wave_format);
+		out.write((const char *)&wave_format, sizeof(WaveFormatChunk));
 
-	memcpy(wave_format.id, "fmt ", 4);
-	wave_format.size = sizeof(WaveFormatChunk) - sizeof(wave_format.id) - sizeof(wave_format.size);
-	wave_format.audioFormat = 1;
-	wave_format.channelCount = fmt.channelCount;
-	wave_format.sampleRate = fmt.sampleRate;
-	wave_format.byteRate = fmt.sizeForFrameCount(fmt.sampleRate);
-	wave_format.bytePerFrame = fmt.sizeForFrameCount(1);
-	wave_format.bitPerSample = fmt.bitDepth;
-
-	debug_wave_format_chunk(wave_format);
-	out.write((const char *)&wave_format, sizeof(WaveFormatChunk));
-
-	WaveDataChunk wave_data;
-
-	memcpy(wave_data.id, "data", 4);
-	wave_data.size = fmt.sizeForFrameCount(buffer.frameCount());
-
-	debug_wave_data_chunk(wave_data);
-	out.write((const char *)&wave_data, sizeof(WaveDataChunk));
-	out.write((const char *)buffer.data(), fmt.sizeForFrameCount(buffer.frameCount()));
+		WaveDataChunk wave_data;
+		memcpy(wave_data.id, "data", 4);
+		wave_data.size = fmt.sizeForFrameCount(buffer.frameCount());
+		debug_wave_data_chunk(wave_data);
+		out.write((const char *)&wave_data, sizeof(WaveDataChunk));
+		out.write((const char *)buffer.data(), fmt.sizeForFrameCount(buffer.frameCount()));
+	} catch (std::ofstream::failure ioerr) {
+		Error::raise(Error::Status::IOError, ioerr.what());
+	}
 }
 
 } /* namespace audio */
