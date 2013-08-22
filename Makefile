@@ -4,21 +4,17 @@ export AR	     = ar
 export COMMON_FLAGS  = -Wall -Werror
 export CFLAGS        = $(COMMON_FLAGS)
 export CXXFLAGS      = -std=c++11 $(COMMON_FLAGS)
-export SOURCES      := $(wildcard $(PWD)/sources/*.cpp)
-export SOURCES      += $(wildcard $(PWD)/sources/codec/*.cpp)
+export SOURCES      := $(wildcard $(CURDIR)/sources/*.cpp)
+export SOURCES      += $(wildcard $(CURDIR)/sources/codec/*.cpp)
 export OBJECTS      := $(notdir $(patsubst %.cpp,%.o,$(SOURCES)))
-export VPATH        := $(PWD)/sources:$(PWD)/sources/codec
-export DEPS         := $(PWD)/Makefile.depends
+export VPATH        := $(CURDIR)/sources:$(CURDIR)/sources/codec
+export DEPS         := $(CURDIR)/Makefile.depends
 
 .PHONY: all clean Debug depends realclean Release tags
 
 all: Debug Release
 
-Debug:
-	@mkdir -p $@
-	$(MAKE) --no-print-directory -C $@ -f ../$@.mk $(TARGET)
-
-Release:
+Debug Release:
 	@mkdir -p $@
 	$(MAKE) --no-print-directory -C $@ -f ../$@.mk $(TARGET)
 

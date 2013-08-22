@@ -4,6 +4,6 @@ CXXFLAGS += -O3
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(LFLAGS) -o $@ $(OBJECTS)
+	$(AR) -q $@ $(OBJECTS)
 
 include $(DEPS)
