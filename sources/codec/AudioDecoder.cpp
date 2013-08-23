@@ -12,8 +12,9 @@
 
 #include "../AudioError.h"
 #include "AudioDecoder.h"
-#include "AudioPCMDecoder.h"
 #include "AudioMP3Decoder.h"
+#include "AudioPCMDecoder.h"
+#include "AudioOggVorbisDecoder.h"
 
 namespace com {
 namespace nealrame {
@@ -24,6 +25,10 @@ std::shared_ptr<Decoder> Decoder::getDecoder(const std::string filename) {
 
 	if (ext == ".mp3") {
 		return std::shared_ptr<Decoder>(new MP3Decoder);
+	}
+
+	if (ext == ".ogg") {
+		return std::shared_ptr<Decoder>(new OggVorbisDecoder);
 	}
 
 	if (ext == ".wav") {
