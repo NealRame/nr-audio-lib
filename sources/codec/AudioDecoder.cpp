@@ -20,19 +20,19 @@ namespace com {
 namespace nealrame {
 namespace audio {
 
-std::shared_ptr<Decoder> Decoder::getDecoder(const std::string filename) {
+Decoder * Decoder::getDecoder(const std::string filename) {
 	std::string ext = boost::to_lower_copy(boost::filesystem::path(filename).extension().string());
 
 	if (ext == ".mp3") {
-		return std::shared_ptr<Decoder>(new MP3Decoder);
+		return new MP3Decoder;
 	}
 
 	if (ext == ".ogg") {
-		return std::shared_ptr<Decoder>(new OggVorbisDecoder);
+		return new OggVorbisDecoder;
 	}
 
 	if (ext == ".wav") {
-		return std::shared_ptr<Decoder>(new PCMDecoder);
+		return new PCMDecoder;
 	}
 
 	throw Error(Error::Status::NoSuitableDecoder);

@@ -18,7 +18,8 @@ namespace audio {
 class Buffer;
 class Decoder {
 public:
-	static std::shared_ptr<Decoder> getDecoder(const std::string file_extension);
+	static Decoder * getDecoder(const std::string file_extension);
+	
 public:
 	virtual ~Decoder() {}
 public:

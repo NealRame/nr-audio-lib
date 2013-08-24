@@ -240,12 +240,6 @@ Buffer * MP3Decoder::decode(std::ifstream &input) const {
 		input.read((char *)buffer, sizeof(buffer));
 		len = input.gcount();
 
-		int pos = input.tellg();
-
-		if (pos > 0) {
-			std::cerr << pos << std::endl;
-		}
-
 		if ((ret = hip_decode1_headers(
 				decode_data.hip, buffer, len,
 				decode_data.pcm_buffer[0], decode_data.pcm_buffer[1],
