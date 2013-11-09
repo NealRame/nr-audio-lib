@@ -4,14 +4,14 @@ ID3 tag version 2.3.0
 
 
 
-This document is an informal standard and replaces the ID3v2.2.0 standard [ID3v2]. The informal standard is released so that implementors could have a set standard before a formal standard is set. The formal standard will use another version or revision number if not identical to what is described in this document. The contents in this document may change for clarifications but never for added or altered functionallity.
+This document is an informal standard and replaces the ID3v2.2.0 standard [ID3v2](#1). The informal standard is released so that implementors could have a set standard before a formal standard is set. The formal standard will use another version or revision number if not identical to what is described in this document. The contents in this document may change for clarifications but never for added or altered functionallity.
 
 Distribution of this document is unlimited.
 
 1. Abstract
 -----------
 
-This document describes the ID3v2.3.0, which is a more developed version of the ID3v2 informal standard [ID3v2] (version 2.2.0), evolved from the ID3 tagging system. The ID3v2 offers a flexible way of storing information about an audio file within itself to determine its origin and contents. The information may be technical information, such as equalisation curves, as well as related meta information, such as title, performer, copyright etc.
+This document describes the ID3v2.3.0, which is a more developed version of the ID3v2 informal standard ID3v2 (version 2.2.0), evolved from the ID3 tagging system. The ID3v2 offers a flexible way of storing information about an audio file within itself to determine its origin and contents. The information may be technical information, such as equalisation curves, as well as related meta information, such as title, performer, copyright etc.
 
 
 
@@ -46,18 +46,17 @@ It is permitted to include padding after all the final frame (at the end of the 
 
 The ID3v2 tag header, which should be the first information in the file, is 10 bytes as follows:
 
-     ID3v2_file_identifier      "ID3"
-     ID3v2_version              $03 00
-     ID3v2_flags                %abc00000
-     ID3v2_size                 4 * %0xxxxxxx
+    id3v2_file_identifier       "ID3"
+    id3v2_version               $03 00
+    id3v2_flags                 %abc00000
+    id3v2_size                  4 * %0xxxxxxx
 
-The first three bytes of the tag are always "ID3" to indicate that this is an ID3v2 tag, directly followed by the two version bytes. The first byte of ID3v2 version is it's major version, while the second byte is its revision number. In this case this is ID3v2.3.0. All revisions are backwards compatible while major versions are not. If software with ID3v2.2.0 and below support should encounter version three or higher it should simply ignore the whole tag. Version and revision will never be $FF.
+The first three bytes of the tag are always `"ID3"` to indicate that this is an ID3v2 tag, directly followed by the two version bytes. The first byte of ID3v2 version is it's major version, while the second byte is its revision number. In this case this is ID3v2.3.0. All revisions are backwards compatible while major versions are not. If software with ID3v2.2.0 and below support should encounter version three or higher it should simply ignore the whole tag. Version and revision will never be `$FF`.
 
 The version is followed by one the ID3v2 flags field, of which currently only three flags are used.
 
 - **`a`** unsynchronisation  
     Bit 7 in the 'ID3v2 flags' indicates whether or not unsynchronisation is used (see section 5 for details); a set bit indicates usage.
-
 
 - **`b`** extended header  
     The second bit (bit 6) indicates whether or not the header is followed by an extended header. The extended header is described in section 3.2.
@@ -75,16 +74,16 @@ An ID3v2 tag can be detected with the following pattern:
 
     $49 44 33 yy yy xx zz zz zz zz
     
-Where `yy` is less than `$FF`, `xx` is the _flags_ byte and `zz` is less than $80.
+Where `yy` is less than `$FF`, `xx` is the _flags_ byte and `zz` is less than `$80`.
 
 
 ### 3.2. ID3v2 extended header
 
 The extended header contains information that is not vital to the correct parsing of the tag information, hence the extended header is optional.
 
-     extended_header_size   $xx xx xx xx
-     extended_flags         $xx xx
-     size_of_padding        $xx xx xx xx
+    extended_header_size        $xx xx xx xx
+    extended_flags              $xx xx
+    size_of_padding             $xx xx xx xx
 
 Where the 'Extended header size', currently 6 or 10 bytes, excludes itself. The 'Size of padding' is simply the total tag size excluding the frames and the headers, in other words the padding. The extended header is considered separate from the header proper, and as such is subject to unsynchronisation.
 
@@ -95,18 +94,18 @@ The extended flags are a secondary flag set which describes further attributes o
 - **`x`** CRC data present  
 If this flag is set four bytes of CRC-32 data is appended to the extended header. The CRC should be calculated before unsynchronisation on the data between the extended header and the padding, i.e. the frames and only the frames.
 
-    total_frame_CRC        $xx xx xx xx
+    total_frame_CRC             $xx xx xx xx
 
 
 ### 3.3. ID3v2 frame overview
 
 As the tag consists of a tag header and a tag body with one or more frames, all the frames consists of a frame header followed by one or more fields containing the actual information. The layout of the frame header:
 
-     frame_ID   $xx xx xx xx  (four characters)
-     size       $xx xx xx xx
-     flags      $xx xx
+     frame_id                   $xx xx xx xx  (four characters)
+     frame_size                 $xx xx xx xx
+     frame_flags                $xx xx
 
-The frame ID made out of the characters capital `A-Z` and `0-9`. Identifiers beginning with "X", "Y" and "Z" are for experimental use and free for everyone to use, without the need to set the experimental bit in the tag header. Have in mind that someone else might have used the same identifier as you. All other identifiers are either used or reserved for future use.
+The frame ID made out of the characters capital `A-Z` and `0-9`. Identifiers beginning with `"X"`, `"Y"` and `"Z"` are for experimental use and free for everyone to use, without the need to set the experimental bit in the tag header. Have in mind that someone else might have used the same identifier as you. All other identifiers are either used or reserved for future use.
 
 The frame ID is followed by a size descriptor, making a total header size of ten bytes in every frame. The size is calculated as frame size excluding frame header (`frame_size - 10`).
 
@@ -280,8 +279,8 @@ The following frames are declared in this draft (in alphabetical order):
 This frame's purpose is to be able to identify the audio file in a database that may contain more information relevant to the content. Since standardization of such a database is beyond this document, all frames begin with a null-terminated string with a URL [URL] containing an email address, or a link to a location where an email address can be found, that belongs to the organization responsible for this specific database implementation. Questions regarding the database should be sent to the indicated email address. The URL should not be used for the actual database queries. The string "http://www.id3.org/dummy/ufid.html" should be used for tests. Software that isn't told otherwise may safely remove such frames. The _Owner identifier_ must be non-empty (more than just a termination). The _Owner identifier_ is then followed by the actual identifier, which may be up to 64 bytes. There may be more than one `UFID` frame in a tag, but only one with the same 'Owner identifier'.
 
     <Header for 'Unique file identifier', ID: "UFID">
-    owner_identifier        <text string> $00
-    identifier              <up to 64 bytes binary data>
+    owner_identifier            <text_string> $00
+    identifier                  <up to 64 bytes binary data>
 
 
 ### 4.2. Text information frames
@@ -289,8 +288,8 @@ This frame's purpose is to be able to identify the audio file in a database that
 The text information frames are the most important frames, containing information like artist, album and more. There may only be one text information frame of its kind in an tag. If the text string is followed by a termination (`$00 (00)`) all the following information should be ignored and not be displayed. All text frame identifiers begin with `"T"`. Only text frame identifiers begin with `"T"`, with the exception of the [`TXXX`](#422-user-defined-text-information-frame) frame. All the text information frames have the following format:
 
     <Header for 'Text information frame', ID: "T000" - "TZZZ", excluding "TXXX" described in 4.2.2.>
-    text_encoding          $xx
-    information            <text string according to encoding>
+    text_encoding               $xx
+    information                 <text_string_according_to_encoding>
 
 
 #### 4.2.1. Text information frames - details
@@ -309,8 +308,8 @@ The _Content type_, which previously was stored as a one byte numeric value only
 
 References to the ID3v1 genres can be made by, as first byte, enter `"("` followed by a number from the genres list (see _[appendix A](#appendix-a)_) and ended with a `")"` character. This is optionally followed by a refinement, e.g. `"(21)"` or `"(4)Eurodisco"`. Several references can be made in the same frame, e.g. `"(51)(39)"`. If the refinement should begin with a `"("` character it should be replaced with `"(("`, e.g. `"((I can figure out any genre)"` or `"(55)((I think...)"`. The following new content types is defined in ID3v2 and is implemented in the same way as the numeric content types, e.g. `"(RX)"`.
 
-     RX - remix
-     CR - cover
+- `RX` = remix
+- `CR` = cover
 
 ##### TCOP
 The _Copyright message_ frame, which must begin with a year and a space character (making five characters), is intended for the copyright holder of the original sound, not the audio file itself. The absence of this frame means only that the copyright information is unavailable or has been removed, and must not be interpreted to mean that the sound is public domain. Every time this field is displayed the field must be preceded with `"Copyright © "`.
@@ -330,14 +329,14 @@ The _Lyricist(s)/Text writer(s)_ frame is intended for the writer(s) of the text
 ##### TFLT
 The _File type_ frame indicates which type of audio this tag defines. The following type and refinements are defined:
 
-     MPG    MPEG Audio
-       /1     MPEG 1/2 layer I
-       /2     MPEG 1/2 layer II
-       /3     MPEG 1/2 layer III
-       /2.5   MPEG 2.5
-       /AAC   Advanced audio compression
-     VQF    Transform-domain Weighted Interleave Vector Quantization
-     PCM    Pulse Code Modulated audio
+    MPG    MPEG Audio
+      /1     MPEG 1/2 layer I
+      /2     MPEG 1/2 layer II
+      /3     MPEG 1/2 layer III
+      /2.5   MPEG 2.5
+      /AAC   Advanced audio compression
+    VQF    Transform-domain Weighted Interleave Vector Quantization
+    PCM    Pulse Code Modulated audio
 
 but other types may be used, not for these types though. This is used in a similar way to the predefined types in the [`TMED`](#tmed) frame, but without parentheses. If this frame is not present audio type is assumed to be `"MPG"`.
 
@@ -513,9 +512,9 @@ The _Year_ frame is a numeric string with a year of the recording. This frames i
 This frame is intended for one-string text information concerning the audio file in a similar way to the other `T-frames`. The frame body consists of a description of the string, represented as a terminated string, followed by the actual string. There may be more than one `TXXX` frame in each tag, but only one with the same description.
 
     <Header for 'User defined text information frame', ID: "TXXX">
-    Text encoding     $xx
-    Description       <text_string_according_to_encoding> $00 (00)
-    Value             <text_string_according_to_encoding>
+    text_encoding               $xx
+    description                 <text_string_according_to_encoding> $00 (00)
+    value                       <text_string_according_to_encoding>
 
 
 ### 4.3. URL link frames
@@ -523,7 +522,7 @@ This frame is intended for one-string text information concerning the audio file
 With these frames dynamic data such as web pages with touring information, price information or plain ordinary news can be added to the tag. There may only be one URL [URL] link frame of its kind in an tag, except when stated otherwise in the frame description. If the text string is followed by a termination (`$00 (00)`) all the following information should be ignored and not be displayed. All URL link frame identifiers begins with `"W"`. Only URL link frame identifiers begins with `"W"`. All URL link frames have the following format:
 
     <Header for 'URL link frame', ID: "W000" - "WZZZ", excluding "WXXX" described in 4.3.2.>
-    URL         <text_string>
+    url                         <text_string>
 
 #### 4.3.1. URL link frames - details
 
@@ -557,9 +556,9 @@ The _Publishers official web page_ frame is a URL pointing at the official web p
 This frame is intended for URL [URL] links concerning the audio file in a similar way to the other `W-frames`. The frame body consists of a description of the string, represented as a terminated string, followed by the actual URL. The URL is always encoded with ISO-8859-1 [ISO-8859-1]. There may be more than one `WXXX` frame in each tag, but only one with the same description.
 
     <Header for 'User defined URL link frame', ID: "WXXX">
-    text_encoding     $xx
-    description       <text_string_according_to_encoding> $00 (00)
-    URL               <text_string>
+    text_encoding               $xx
+    description                 <text_string_according_to_encoding> $00 (00)
+    url                         <text_string>
 
 
 ### 4.4. Involved people list
@@ -568,8 +567,8 @@ Since there might be a lot of people contributing to an audio file in various wa
 in a project. The _Involved people list_ is a frame containing the names of those involved, and how they were involved. The body simply contains a terminated string with the involvement directly followed by a terminated string with the involvee followed by a new involvement and so on. There may only be one `IPLS` frame in each tag.
 
     <Header for 'Involved people list', ID: "IPLS">
-    text_encoding          $xx
-    people_list_strings    <text_strings_according_to_encoding>
+    text_encoding               $xx
+    people_list_strings         <text_strings_according_to_encoding>
 
 
 ### 4.5. Music CD identifier
@@ -577,7 +576,7 @@ in a project. The _Involved people list_ is a frame containing the names of thos
 This frame is intended for music that comes from a CD, so that the CD can be identified in databases such as the CDDB [CDDB]. The frame consists of a binary dump of the Table Of Contents, TOC, from the CD, which is a header of 4 bytes and then 8 bytes/track on the CD plus 8 bytes for the 'lead out' making a maximum of 804 bytes. The offset to the beginning of every track on the CD should be described with a four bytes absolute CD-frame address per track, and not with absolute time. This frame requires a present and valid [`TRCK`](#trck) frame, even if the CD's only got one track. There may only be one `MCDI` frame in each tag.
 
     <Header for 'Music CD identifier', ID: "MCDI">
-    cd_toc                <binary data>
+    cd_toc                      <binary data>
 
 
 ### 4.6. Event timing codes
@@ -585,7 +584,7 @@ This frame is intended for music that comes from a CD, so that the CD can be ide
 This frame allows synchronization with key events in a song or sound. The header is:
 
     <Header for 'Event timing codes', ID: "ETCO">
-    time_stamp_format    $xx
+    time_stamp_format           $xx
 
 Where `time_stamp_format` is:
 
@@ -595,8 +594,8 @@ Where `time_stamp_format` is:
 Absolute time means that every stamp contains the time from the beginning of the file.
 Followed by a list of key events in the following format:
 
-    type_of_event      $xx
-    time_stamp         $xx (xx ...)
+    type_of_event               $xx
+    time_stamp                  $xx (xx ...)
 
 The `time_stamp` is set to zero if directly at the beginning of the sound or after the previous event. All events should be sorted in chronological order. The `type_of_event` is as follows:
 
@@ -648,8 +647,8 @@ Each reference consists of two parts; a certain number of bits, as defined in `b
 
 Then for every reference the following data is included;
 
-    deviation_in_bytes                 %xxx....
-    deviation_in_milliseconds          %xxx....
+    deviation_in_bytes          %xxx....
+    deviation_in_milliseconds   %xxx....
 
 
 ### 4.8. Synchronized tempo codes
@@ -659,8 +658,8 @@ For a more accurate description of the tempo of a musical piece this frame might
 The tempo descriptor is followed by a time stamp. Every time the tempo in the music changes, a tempo descriptor may indicate this for the player. All tempo descriptors should be sorted in chronological order. The first beat-stroke in a time-period is at the same time as the beat description occurs. There may only be one "SYTC" frame in each tag.
 
     <Header for 'Synchronised tempo codes', ID: "SYTC">
-    time_stamp_format      $xx
-    tempo_data             <binary_data>
+    time_stamp_format           $xx
+    tempo_data                  <binary_data>
 
 Where time stamp format is:
 
@@ -675,10 +674,10 @@ Absolute time means that every stamp contains the time from the beginning of the
 This frame contains the lyrics of the song or a text transcription of other vocal activities. The head includes an encoding descriptor and a content descriptor. The body consists of the actual text. The _Content descriptor_ is a terminated string. If no descriptor is entered, _Content descriptor_ is `$00 (00)` only. Newline characters are allowed in the text. There may be more than one _Unsynchronized lyrics/text transcription_ frame in each tag, but only one with the same language and content descriptor.
 
     <Header for 'Unsynchronised lyrics/text transcription', ID: "USLT">
-    text_encoding        $xx
-    language             $xx xx xx
-    content_descriptor   <text_string_according_to_encoding> $00 (00)
-    lyrics_text          <full_text_string_according_to_encoding>
+    text_encoding               $xx
+    language                    $xx xx xx
+    content_descriptor          <text_string_according_to_encoding> $00 (00)
+    lyrics_text                 <full_text_string_according_to_encoding>
 
 
 ### 4.10. Synchronized lyrics/text
@@ -686,11 +685,11 @@ This frame contains the lyrics of the song or a text transcription of other voca
 This is another way of incorporating the words, said or sung lyrics, in the audio file as text, this time, however, in sync with the audio. It might also be used to describing events e.g. occurring on a stage or on the screen in sync with the audio. The header includes a content descriptor, represented with as terminated text string. If no descriptor is entered, _Content descriptor_ is `$00 (00)` only.
 
     <Header for 'Synchronised lyrics/text', ID: "SYLT">
-    text_encoding        $xx
-    language             $xx xx xx
-    time_stamp_format    $xx
-    content_type         $xx
-    content_descriptor   <text_string_according_to_encoding> $00 (00)
+    text_encoding               $xx
+    language                    $xx xx xx
+    time_stamp_format           $xx
+    content_type                $xx
+    content_descriptor          <text_string_according_to_encoding> $00 (00)
 
 `encoding` is:
 
@@ -743,10 +742,10 @@ There may be more than one `SYLT` frame in each tag, but only one with the same 
 This frame is intended for any kind of full text information that does not fit in any other frame. It consists of a frame header followed by encoding, language and content descriptors and is ended with the actual comment as a text string. Newline characters are allowed in the comment text string. There may be more than one comment frame in each tag, but only one with the same language and content descriptor.
 
     <Header for 'Comment', ID: "COMM">
-    text_encoding                  $xx
-    language                       $xx xx xx
-    short_content_description.     <text string according to encoding> $00 (00)
-    the_actual_text                <full text string according to encoding>
+    text_encoding               $xx
+    language                    $xx xx xx
+    short_content_description   <text string according to encoding> $00 (00)
+    the_actual_text             <full text string according to encoding>
 
 
 ### 4.12. Relative volume adjustment
@@ -788,15 +787,15 @@ If the bass channel adjustment is present the following is appended to the exist
 This is another subjective, alignment frame. It allows the user to predefine an equalization curve within the audio file. There may only be one `EQUA` frame in each tag.
 
     <Header of 'Equalisation', ID: "EQUA">
-    adjustment_bits        $xx
+    adjustment_bits             $xx
 
 The `adjustment_bits` field defines the number of bits used for representation of the adjustment. This is normally `$10` (16 bits) for MPEG 2 layer I, II and III [MPEG] and MPEG 2.5. This value may not be  `$00`.
 
 This is followed by 2 bytes + (`adjustment_bits` rounded up to the nearest byte) for every equalization band in the following format, giving a frequency range of 0 - 32767Hz:
 
-    increment_decrement   %x (MSB of the Frequency)
-    frequency             (lower 15 bits)
-    adjustment            $xx (xx ...)
+    increment_decrement         %x (MSB of the Frequency)
+    frequency                   (lower 15 bits)
+    adjustment                  $xx (xx ...)
 
 The `increment_decrement` bit is 1 for increment and 0 for decrement. The equalization bands should be ordered increasingly with reference to frequency. All frequencies don't have to be declared. The equalization curve in the reading software should be interpolated between the values in this frame. Three equal adjustments for three subsequent frequencies. A frequency should only be described once in the frame.
 
@@ -806,16 +805,16 @@ The `increment_decrement` bit is 1 for increment and 0 for decrement. The equali
 Yet another subjective one. You may here adjust echoes of different kinds. `reverb_left` and `reverb_right` are delay between every bounce in ms. `reverb_bounces_left` and `reverb_bounces_right` are numbers of bounces that should be made. `$FF` equals an infinite number of bounces. Feedback are the amount of volume that should be returned to the next echo bounce. `$00` is 0%, `$FF` is 100%. If this value were `$7F`, there would be 50% volume reduction on the first bounce, 50% of that on the second and so on. Left to left means the sound from the left bounce to be played in the left speaker, while left to right means sound from the left bounce to be played in the right speaker.`premix_left_to _right` is the amount of left sound to be mixed in the right before any reverb is applied, where `$00` is 0% and `$FF` is 100%. `premix_right_to_left` does the same thing, but right to left. Setting both premix to `$FF` would result in a mono output (if the reverb is applied symmetric). There may only be one `RVRB` frame in each tag.
 
     <Header for 'Reverb', ID: "RVRB">
-    reverb_left                        $xx xx
-    reverb_right                       $xx xx
-    reverb_bounces_left                $xx
-    reverb_bounces_right               $xx
-    reverb_feedback_left_to_left       $xx
-    reverb_feedback_left_to_right      $xx
-    reverb_feedback_right_to_right     $xx
-    reverb_feedback_right_to_left      $xx
-    premix_left_to_right               $xx
-    premix_right_to_left               $xx
+    reverb_left                     $xx xx
+    reverb_right                    $xx xx
+    reverb_bounces_left             $xx
+    reverb_bounces_right            $xx
+    reverb_feedback_left_to_left    $xx
+    reverb_feedback_left_to_right   $xx
+    reverb_feedback_right_to_right  $xx
+    reverb_feedback_right_to_left   $xx
+    premix_left_to_right            $xx
+    premix_right_to_left            $xx
 
 
 ### 4.15. Attached picture
@@ -823,11 +822,11 @@ Yet another subjective one. You may here adjust echoes of different kinds. `reve
 This frame contains a picture directly related to the audio file. Image format is the MIME type and subtype [MIME] for the image. In the event that the MIME media type name is omitted, "image/" will be implied. The `image/png` [PNG] or `image/jpeg` [JFIF] picture format should be used when interoperability is wanted. Description is a short description of the picture, represented as a terminated text string. The description has a maximum length of 64 characters, but may be empty. There may be several pictures attached to one file, each in their individual `APIC` frame, but only one with the same content descriptor. There may only be one picture with the picture type declared as picture type `$01` and `$02` respectively. There is the possibility to put only a link to the image file by using the 'MIME type' `-->` and having a complete URL [URL] instead of picture data. The use of linked files should however be used sparingly since there is the risk of separation of files.
 
     <Header for 'Attached picture', ID: "APIC">
-    text_encoding      $xx
-    MIME_type          <text_string> $00
-    picture_type       $xx
-    description        <text_string_according_to_encoding> $00 (00)
-    picture_data       <binary_data>
+    text_encoding               $xx
+    mime_type                   <text_string> $00
+    picture_type                $xx
+    description                 <text_string_according_to_encoding> $00 (00)
+    picture_data                <binary_data>
 
 `picture_type` is:
 
@@ -856,14 +855,14 @@ This frame contains a picture directly related to the audio file. Image format i
 
 ### 4.16. General encapsulated object
 
-In this frame any type of file can be encapsulated. After the header, `frame_size` and `text_encoding` follows `MIME_type` [MIME] represented as a terminated string encoded with ISO 8859-1 [ISO-8859-1]. The filename is case sensitive and is encoded as `text_encoding`. Then follows a content description as terminated string, encoded as `text_encoding`. The last thing in the frame is the actual object. The first two strings may be omitted, leaving only their terminations. `MIME_type` is always an ISO-8859-1 text string. There may be more than one `GEOB` frame in each tag, but only one with the same content descriptor.
+In this frame any type of file can be encapsulated. After the header, `frame_size` and `text_encoding` follows `mime_type` [MIME] represented as a terminated string encoded with ISO 8859-1 [ISO-8859-1]. The filename is case sensitive and is encoded as `text_encoding`. Then follows a content description as terminated string, encoded as `text_encoding`. The last thing in the frame is the actual object. The first two strings may be omitted, leaving only their terminations. `mime_type` is always an ISO-8859-1 text string. There may be more than one `GEOB` frame in each tag, but only one with the same content descriptor.
 
     <Header for 'General encapsulated object', ID: "GEOB">
-    text_encoding          $xx
-    MIME_type              <text string> $00
-    filename               <text string according to encoding> $00 (00)
-    content_description    <text string according to encoding> $00 (00)
-    encapsulated_object    <binary data>
+    text_encoding               $xx
+    mime_type                   <text_string> $00
+    filename                    <text_string_according_to_encoding> $00 (00)
+    content_description         <text_string_according_to_encoding> $00 (00)
+    encapsulated_object         <binary_data>
 
 
 ### 4.17. Play counter
@@ -871,7 +870,7 @@ In this frame any type of file can be encapsulated. After the header, `frame_siz
 This is simply a counter of the number of times a file has been played. The value is increased by one every time the file begins to play. There may only be one `PCNT` frame in each tag. When the counter reaches all one's, one byte is inserted in front of the counter thus making the counter eight bits bigger. The counter must be at least 32-bits long to begin with.
 
     <Header for 'Play counter', ID: "PCNT">
-    counter        $xx xx xx xx (xx ...)
+    counter                     $xx xx xx xx (xx ...)
 
 
 ### 4.18. Popularimeter
@@ -879,9 +878,9 @@ This is simply a counter of the number of times a file has been played. The valu
 The purpose of this frame is to specify how good an audio file is. Many interesting applications could be found to this frame such as a playlist that features better audio files more often than others or it could be used to profile a person's taste and find other _good_ files by comparing people's profiles. The frame is very simple. It contains the email address to the user, one rating byte and a four byte play counter, intended to be increased with one for every time the file is played. The email is a terminated string. The rating is 1-255 where 1 is worst and 255 is best. 0 is unknown. If no personal counter is wanted it may be omitted.  When the counter reaches all one's, one byte is inserted in front of the counter thus making the counter eight bits bigger in the same away as the play counter [`PCNT`](#417-play-counter). There may be more than one `POPM` frame in each tag, but only one with the same email address.
 
     <Header for 'Popularimeter', ID: "POPM">
-    email_to_user   <text_string> $00
-    rating          $xx
-    counter         $xx xx xx xx (xx ...)
+    email_to_user               <text_string> $00
+    rating                      $xx
+    counter                     $xx xx xx xx (xx ...)
 
 
 ### 4.19. Recommended buffer size
@@ -895,22 +894,22 @@ For applications like streaming audio it might be an idea to embed tags into the
 The `buffer_size` should be kept to a minimum. There may only be one `RBUF` frame in each tag.
 
     <Header for 'Recommended buffer size', ID: "RBUF">
-    buffer_size               $xx xx xx
-    embedded_info_flag        %0000000x
-    offset_to_next_tag        $xx xx xx xx
+    buffer_size                 $xx xx xx
+    embedded_info_flag          %0000000x
+    offset_to_next_tag          $xx xx xx xx
 
 
 ### 4.20. Audio encryption
 
-This frame indicates if the actual audio stream is encrypted, and by whom. Since standardization of such encryption scheme is beyond this document, all `AENC` frames begin with a terminated string with a URL containing an email address, or a link to a location where an email address can be found, that belongs to the organization responsible for this specific encrypted audio file. Questions regarding the encrypted audio should be sent to the email address specified. If a `$00` is found directly after the `frame_size ` and the audio file indeed is encrypted, the whole file may be considered useless.
+This frame indicates if the actual audio stream is encrypted, and by whom. Since standardization of such encryption scheme is beyond this document, all `AENC` frames begin with a terminated string with a URL containing an email address, or a link to a location where an email address can be found, that belongs to the organization responsible for this specific encrypted audio file. Questions regarding the encrypted audio should be sent to the email address specified. If a `$00` is found directly after the `frame_size` and the audio file indeed is encrypted, the whole file may be considered useless.
 
 After the `owner_identifier`, a pointer to an unencrypted part of the audio can be specified. The `preview_start` and `preview_length` is described in frames. If no part is unencrypted, these fields should be left zeroed. After the `preview_length` field follows optionally a data block required for decryption of the audio. There may be more than one `AENC` frames in a tag, but only one with the same `owner_identifier`.
 
     <Header for 'Audio encryption', ID: "AENC">
-    owner_identifier   <text_string> $00
-    preview_start      $xx xx
-    preview_length     $xx xx
-    encryption_info    <binary_data>
+    owner_identifier            <text_string> $00
+    preview_start               $xx xx
+    preview_length              $xx xx
+    encryption_info             <binary_data>
 
 
 ### 4.21. Linked information
@@ -918,9 +917,9 @@ After the `owner_identifier`, a pointer to an unencrypted part of the audio can 
 To keep space waste as low as possible this frame may be used to link information from another ID3v2 tag that might reside in another audio file or alone in a binary file. It is recommended that this method is only used when the files are stored on a CD-ROM or other circumstances when the risk of file separation is low. The frame contains a frame identifier, which is the frame that should be linked into this tag, a `url` [URL] field, where a reference to the file where the frame is given, and additional `id` data, if needed. Data should be retrieved from the first tag found in the file to which this link points. There may be more than one  `LINK` frame in a tag, but only one with the same contents. A linked frame is to be considered as part of the tag and has the same restrictions as if it was a physical part of the tag (i.e. only one [`RVRB`](#414-reverb) frame allowed, whether it's linked or not).
 
     <Header for 'Linked information', ID: "LINK">
-    frame_identifier        $xx xx xx
-    url                     <text string> $00
-    additional_id_data      <text_string(s)>
+    frame_id                    $xx xx xx
+    url                         <text string> $00
+    additional_id_data          <text_string(s)>
 
 Frames that may be linked and need no additional data are [`IPLS`](#44-involved-people-list), [`MCDI`](#45-music-cd-identifier), [`ETCO`](#46-event-timing-code), [`MLLT`](#47-mpeg-location-lookup-table), [`SYTC`](#48-synchronized-tempo-codes), [`RVAD`](#412-relative-volume-adjustment), [`EQUA`](#413-equalization), [`RVRB`](#414-reverb), [`RBUF`](#419-recommended-buffer-size), the text information frames (`T-Frames`) and the URL link frames (`U-Frames`).
 
@@ -934,8 +933,8 @@ The [`COMM`](#411-comments), [`SYLT`](#410-synchronized-lyrictext) and [`USLT`](
 This frame delivers information to the listener of how far into the audio stream he picked up; in effect, it states the time offset of the first frame in the stream. The frame layout is:
 
     <Head for 'Position synchronisation', ID: "POSS">
-    time_stamp_format       $xx
-    position                $xx (xx ...)
+    time_stamp_format           $xx
+    position                    $xx (xx ...)
 
 Where `time_stamp_ format` is:
 
@@ -950,9 +949,9 @@ and position is where in the audio the listener starts to receive, i.e. the begi
 This frame contains a brief description of the terms of use and ownership of the file. More detailed information concerning the legal terms might be available through the [`WCOP`](#431-copyright-Legal-information) frame. Newlines are allowed in the text. There may only be one `USER` frame in a tag.
 
     <Header for 'Terms of use frame', ID: "USER">
-    text_encoding           $xx
-    language                $xx xx xx
-    the_actual_text         <text_string_according_to_encoding>
+    text_encoding               $xx
+    language                    $xx xx xx
+    the_actual_text             <text_string_according_to_encoding>
 
 
 ### 4.24. Ownership frame
@@ -960,15 +959,15 @@ This frame contains a brief description of the terms of use and ownership of the
 The ownership frame might be used as a reminder of a made transaction or, if signed, as proof. Note that the [`USER`](#423-terms-of-use)" and [`TOWN`](#421-TOWN) frames are good to use in conjunction with this one. The frame begins, after the frame ID, size and encoding fields, with a `price_paye` field. The first three characters of this field contains the currency used for the transaction, encoded according to ISO 4217 [ISO-4217] alphabetic currency code. Concatenated to this is the actual price payed, as a numerical string using `"."` as the decimal separator. Next is an 8 characters date string (`YYYYMMDD`) followed by a string with the name of the seller as the last field in the frame. There may only be one `OWNE` frame in a tag.
 
     <Header for 'Ownership frame', ID: "OWNE">
-    text_encoding           $xx
-    price_payed             <text string> $00
-    date_of_purchase        <text string>
-    seller                  <text string according to encoding>
+    text_encoding               $xx
+    price_payed                 <text_string> $00
+    date_of_purchase            <text_string>
+    seller                      <text_string_according_to_encoding>
 
 
 ### 4.25. Commercial frame
 
-This frame enables several competing offers in the same tag by bundling all needed information. That makes this frame rather complex but it's an easier solution than if one tries to achieve the same result with several frames. The frame begins, after the `frame_ID`, size and encoding fields, with a price string field. A price is constructed by one three character currency code, encoded according to ISO 4217 [ISO-4217] alphabetic currency code, followed by a numerical value where `"."` is used as decimal separator. In the price string several prices may be concatenated, separated by a `"/"` character, but there may only be one currency of each type.
+This frame enables several competing offers in the same tag by bundling all needed information. That makes this frame rather complex but it's an easier solution than if one tries to achieve the same result with several frames. The frame begins, after the `frame_id                    size and encoding fields, with a price string field. A price is constructed by one three character currency code, encoded according                 to ISO 4217 [ISO-4217] alphabetic currency code, followed by a numerical value where `"."` is used as decimal separator. In the pr              ice string several prices may be concatenated, separated by a `"/"` character, but there may only be one currency of each type.
 
 The price string is followed by an 8 character date string in the format `YYYYMMDD`, describing for how long the price is valid. After that is a contact URL, with which the user can contact the seller, followed by a one byte `received_as` field. It describes how the audio is delivered when bought according to the following list:
 
@@ -982,18 +981,18 @@ The price string is followed by an 8 character date string in the format `YYYYMM
 - `$07`, music on other media,
 - `$08`, non-musical merchandise.
 
-Next follows a terminated string with the name of the seller followed by a terminated string with a short description of the product. The last thing is the ability to include a company logotype. The first of them is the `picture_MIME_type` field containing information about which picture format is used. In the event that the MIME media type name is omitted, `"image/"` will be implied. Currently only `"image/png"` and `"image/jpeg"` are allowed. This format string is followed by the binary picture data. This two last fields may be omitted if no picture is to attach.
+Next follows a terminated string with the name of the seller followed by a terminated string with a short description of the product. The last thing is the ability to include a company logotype. The first of them is the `picture_mime_type` field containing information about which picture format is used. In the event that the MIME media type name is omitted, `"image/"` will be implied. Currently only `"image/png"` and `"image/jpeg"` are allowed. This format string is followed by the binary picture data. This two last fields may be omitted if no picture is to attach.
 
     <Header for 'Commercial frame', ID: "COMR">
-    text_encoding           $xx
-    price_string            <text_string> $00
-    valid_until             <text_string>
-    contact_url             <text_string> $00
-    received_as             $xx
-    name_of_seller          <text_string_according_to_encoding> $00 (00)
-    description             <text_string_according_to_encoding> $00 (00)
-    picture_MIME_type       <string> $00
-    seller_logo             <binary_data>
+    text_encoding               $xx
+    price_string                <text_string> $00
+    valid_until                 <text_string>
+    contact_url                 <text_string> $00
+    received_as                 $xx
+    name_of_seller              <text_string_according_to_encoding> $00 (00)
+    description                 <text_string_according_to_encoding> $00 (00)
+    picture_mime_type           <string> $00
+    seller_logo                 <binary_data>
 
 
 ### 4.26. Encryption method registration
@@ -1001,9 +1000,9 @@ Next follows a terminated string with the name of the seller followed by a termi
 To identify with which method a frame has been encrypted the encryption method must be registered in the tag with this frame. The `owner_identifier` is a null-terminated string with a URL [URL] containing an email address, or a link to a location where an email address can be found, that belongs to the organization responsible for this specific encryption method. Questions regarding the encryption method should be sent to the indicated email address. The `method_symbol` contains a value that is associated with this method throughout the whole tag. Values below `$80` are reserved. The `method_symbol` may optionally be followed by encryption specific data. There may be several `ENCR` frames in a tag but only one containing the same symbol and only one containing the same owner identifier. The method must be used somewhere in the tag (see _section [3.3.1](#331-frame-header-flags)_, flag j for more information).
 
     <Header for 'Encryption method registration', ID: "ENCR">
-    owner_identifier        <text_string> $00
-    method_symbol           $xx
-    encryption_data         <binary_data>
+    owner_identifier            <text_string> $00
+    method_symbol               $xx
+    encryption_data             <binary_data>
 
 
 ### 4.27. Group identification registration
@@ -1011,9 +1010,9 @@ To identify with which method a frame has been encrypted the encryption method m
 This frame enables grouping of otherwise unrelated frames. This can be used when some frames are to be signed. To identify which frames belongs to a set of frames a group identifier must be registered in the tag with this frame. The `owner_identifier` is a null-terminated string with a URL [URL] containing an email address, or a link to a location where an email address can be found, that belongs to the organization responsible for this grouping. Questions regarding the grouping should be sent to the indicated email address. The `group_symbol` contains a value that associates the frame with this group throughout the whole tag. Values below `$80` are reserved. The `group_symbol` may optionally be followed by some group specific data, e.g. a _digital signature_. There may be several `GRID` frames in a tag but only one containing the same symbol and only one containing the same owner identifier. The group symbol must be used somewhere in the tag (see _section [3.3.1](#331-frame-header-flags)_, flag j for more information).
 
     <Header for 'Group ID registration', ID: "GRID">
-    owner_identifier        <text_string> $00
-    group_symbol            $xx
-    group_dependent_data    <binary_data>
+    owner_identifier            <text_string> $00
+    group_symbol                $xx
+    group_dependent_data        <binary_data>
 
 
 ### 4.28. Private frame
@@ -1021,8 +1020,8 @@ This frame enables grouping of otherwise unrelated frames. This can be used when
 This frame is used to contain information from a software producer that its program uses and does not fit into the other frames. The frame consists of an `owner_identifier` string and the binary data. The `owner_identifier` is a null-terminated string with a URL [URL] containing an email address, or a link to a location where an email address can be found, that belongs to the organization responsible for the frame. Questions regarding the frame should be sent to the indicated email address. The tag may contain more than one `PRIV` frame but only with different contents. It is recommended to keep the number of `PRIV` frames as low as possible.
 
     <Header for 'Private frame', ID: "PRIV">
-    owner_identifier      <text_string> $00
-    the_private_data      <binary_data>
+    owner_identifier            <text_string> $00
+    the_private_data            <binary_data>
 
 
 
@@ -1033,11 +1032,11 @@ The only purpose of the _unsynchronization scheme_ is to make the ID3v2 tag as c
 
 Whenever a false synchronization is found within the tag, one zeroed byte is inserted after the first false synchronization byte. The format of a correct sync that should be altered by ID3 encoders is as follows:
 
-         %11111111 111xxxxx
+        %11111111 111xxxxx
 
 And should be replaced with:
 
-         %11111111 00000000 111xxxxx
+        %11111111 00000000 111xxxxx
 
 This has the side effect that all `$FF 00` combinations have to be altered, so they won't be affected by the decoding process. Therefore all the `$FF 00` combinations have to be replaced with the `$FF 00 00` combination during the unsynchronization.
 
