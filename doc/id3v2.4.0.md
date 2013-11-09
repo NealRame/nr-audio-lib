@@ -41,46 +41,46 @@ The bitorder in [ID3v2](#1) is most significant bit first (MSB). The byteorder i
 
 Overall tag structure:
 
-     +-----------------------------+
-     |      Header (10 bytes)      |
-     +-----------------------------+
-     |       Extended Header       |
-     | (variable length, OPTIONAL) |
-     +-----------------------------+
-     |   Frames (variable length)  |
-     +-----------------------------+
-     |           Padding           |
-     | (variable length, OPTIONAL) |
-     +-----------------------------+
-     | Footer (10 bytes, OPTIONAL) |
-     +-----------------------------+
+    +-----------------------------+
+    |      Header (10 bytes)      |
+    +-----------------------------+
+    |       Extended Header       |
+    | (variable length, OPTIONAL) |
+    +-----------------------------+
+    |   Frames (variable length)  |
+    +-----------------------------+
+    |           Padding           |
+    | (variable length, OPTIONAL) |
+    +-----------------------------+
+    | Footer (10 bytes, OPTIONAL) |
+    +-----------------------------+
 
-In general, padding and footer are mutually exclusive (see details in _sections [3.3](#33-padding), [3.4](#34-id3v2-footer) and [5](#5-tag-location)_).
+In general, padding and footer are mutually exclusive (see details in _sections [3.3](#33-padding)_, _[3.4](#34-id3v2-footer)_ and _[5](#5-tag-location)_).
 
 
 ### 3.1. ID3v2 header
 
 The first part of the [ID3v2](#1) tag is the 10 bytes tag header, laid out as follows:
 
-     ID3v2_file_identifier      "ID3"
-     ID3v2_version              $04 00
-     ID3v2_flags                %abcd0000
-     ID3v2_size                 4 * %0xxxxxxx
+    id3v2_file_identifier      "ID3"
+    id3v2_version              $04 00
+    id3v2_flags                %abcd0000
+    id3v2_size                 4 * %0xxxxxxx
 
 The first three bytes of the tag are always `"ID3"`, to indicate that this is an [ID3v2](#1) tag, directly followed by the two version bytes. The first byte of [ID3v2](#1) version is its major version, while the second byte is its revision number. In this case this is ID3v2.4.0. All revisions are backwards compatible while major versions are not. If software with ID3v2.4.0 and below support should encounter version five or higher it should simply ignore the whole tag. Version or revision will never be `$FF`.
 
-The version is followed by the [ID3v2](#1)] flags field, of which currently four flags are used.
+The version is followed by the [ID3v2](#1) flags field, of which currently four flags are used.
 
-- a - Unsynchronisation  
-    Bit 7 in the `ID3v2_flags` indicates whether or not unsynchronisation is applied on all frames (see section _[6.1](#61-the-unsynchronization-scheme)_ for details); a set bit indicates usage.
+- **`a`** unsynchronization  
+    Bit 7 in the `id3v2_flags` indicates whether or not unsynchronisation is applied on all frames (see section _[6.1](#61-the-unsynchronization-scheme)_ for details); a set bit indicates usage.
 
-- b - Extended header  
+- **`b`** extended header  
     The second bit (bit 6) indicates whether or not the header is followed by an extended header. The extended header is described in section _[3.2](#32-extended-header)_. A set bit indicates the presence of an extended header.
 
-- c - Experimental indicator  
+- **`c`** experimental indicator  
     The third bit (bit 5) is used as an _experimental indicator_. This flag SHALL always be set when the tag is in an experimental stage.
 
-- d - Footer present  
+- **`d`** footer present  
     Bit 4 indicates that a footer section (detailed in _section [3.4](#34-id3v2-footer)_) is present at the very end of the tag. A set bit indicates the presence of a footer.
 
 All the other flags MUST be cleared. If one of these undefined flags are set, the tag might not be readable for a parser that does not know the flags function.
@@ -128,8 +128,8 @@ Every set flag's data starts with a length byte, which contains a value between 
  - **`d`** tag restrictions  
     For some applications it might be desired to restrict a tag in more ways than imposed by the [ID3v2](#1) specification. Note that the presence of these restrictions does not affect how the tag is decoded, merely how it was restricted before encoding. If this flag is set the tag is restricted as follows:
 
-        Flag data length       $01
-        Restrictions           %ppqrrstt
+        flag_data_length       $01
+        restrictions           %ppqrrstt
 
     - **`p`** tag size restrictions  
         - `00`, no more than 128 frames and 1 MB total tag size,
@@ -169,10 +169,10 @@ It is OPTIONAL to include padding after the final frame (at the end of the ID3 t
 
 To speed up the process of locating an [ID3v2](#1) tag when searching from the end of a file, a footer can be added to the tag. It is REQUIRED to add a footer to an appended tag, i.e. a tag located after all audio data. The footer is a copy of the header, but with a different identifier.
 
-     ID3v2_file_identifier      "3DI"
-     ID3v2_version              $04 00
-     ID3v2_flags                %abcd0000
-     ID3v2_size                 4 * %0xxxxxxx
+    id3v2_file_identifier      "3DI"
+    id3v2_version              $04 00
+    id3v2_flags                %abcd0000
+    id3v2_size                 4 * %0xxxxxxx
 
 
 
@@ -181,13 +181,13 @@ To speed up the process of locating an [ID3v2](#1) tag when searching from the e
 
 All [ID3v2](#1) frames consists of one frame header followed by one or more fields containing the actual information. The header is always 10 bytes and laid out as follows:
 
-    frame_ID            $xx xx xx xx
+    frame_id            $xx xx xx xx
     frame_size          4 * %0xxxxxxx
     frame_flags         $xx xx
 
-The `frame_ID` is made out of the characters capital `A-Z` and `0-9`. Identifiers beginning with `"X"`, `"Y"` and `"Z"` are for experimental frames and free for everyone to use, without the need to set the experimental bit in the tag header. Bear in mind that someone else might have used the same identifier as you. All other identifiers are either used or reserved for future use.
+The `frame_id` is made out of the characters capital `A-Z` and `0-9`. Identifiers beginning with `"X"`, `"Y"` and `"Z"` are for experimental frames and free for everyone to use, without the need to set the experimental bit in the tag header. Bear in mind that someone else might have used the same identifier as you. All other identifiers are either used or reserved for future use.
 
-The `frame_ID` is followed by a size descriptor containing the size of the data in the final frame, after encryption, compression and unsynchronisation. The size is excluding the frame header (`total_frame_size - 10` bytes) and stored as a 32 bits synchsafe integer.
+The `frame_id` is followed by a size descriptor containing the size of the data in the final frame, after encryption, compression and unsynchronisation. The size is excluding the frame header (`total_frame_size - 10` bytes) and stored as a 32 bits synchsafe integer.
 
 In the frame header the size descriptor is followed by two flag bytes. These flags are described in _section [4.1](#41-frame-header-flags)_.
 
@@ -305,11 +305,11 @@ The only purpose of unsynchronisation is to make the [ID3v2](#1) tag as compatib
 
 Whenever a false synchronisation is found within the tag, one zeroed byte is inserted after the first false synchronisation byte. The format of synchronisations that should be altered by ID3 encoders is as follows:
 
-     %11111111 111xxxxx
+    %11111111 111xxxxx
 
 and should be replaced with:
 
-     %11111111 00000000 111xxxxx
+    %11111111 00000000 111xxxxx
 
 This has the side effect that all `$FF 00` combinations have to be altered, so they will not be affected by the decoding process. Therefore all the `$FF 00` combinations have to be replaced with the `$FF 00 00` combination during the unsynchronisation.
 
@@ -381,14 +381,10 @@ Technical committee / subcommittee: JTC 1 / SC 29 and ISO/IEC DIS 13818-3
 Appendix A - Author's Address
 -----------------------------
 
-Written by Martin Nilsson
+Written by 
 
-    Rydsvägen 246 C. 30
-    SE-584 34 Linköping
-    Sweden
-
-Email: <nilsson@id3.org>
-
---------
-
-> Written with [StackEdit](https://stackedit.io/).
+> Martin Nilsson  
+> Rydsvägen 246 C. 30  
+> SE-584 34 Linköping  
+> Sweden  
+> Email: <nilsson@id3.org>
