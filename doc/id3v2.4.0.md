@@ -128,8 +128,8 @@ Every set flag's data starts with a length byte, which contains a value between 
  - **`d`** tag restrictions  
     For some applications it might be desired to restrict a tag in more ways than imposed by the [ID3v2](#1) specification. Note that the presence of these restrictions does not affect how the tag is decoded, merely how it was restricted before encoding. If this flag is set the tag is restricted as follows:
 
-        flag_data_length       $01
-        restrictions           %ppqrrstt
+        flag_data_length        $01
+        restrictions            %ppqrrstt
 
     - **`p`** tag size restrictions  
         - `00`, no more than 128 frames and 1 MB total tag size,
