@@ -30,8 +30,8 @@ The keywords **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **S
 
 
 
-3. ID3v2 overview {#section-3}
-------------------------------
+3. ID3v2 overview
+-----------------
 
 [ID3v2](#1) is a general tagging format for audio, which makes it possible to store meta data about the audio inside the audio file itself. The ID3 tag described in this document is mainly targeted at files encoded with [MPEG-1/2 layer I](#3), [MPEG-1/2 layer II](#3), [MPEG-1/2 layer III](#3) and [MPEG-2.5](#3), but may work with other types of encoded audio or as a stand alone format for audio meta data.
 
@@ -55,10 +55,10 @@ Overall tag structure:
      | Footer (10 bytes, OPTIONAL) |
      +-----------------------------+
 
-In general, padding and footer are mutually exclusive (see details in _sections [3.3](#section-3.3),  [3.4](#section-3.4) and [5](#section-5)_).
+In general, padding and footer are mutually exclusive (see details in _sections [3.3](#33-padding), [3.4](#34-id3v2-footer) and [5](#5-tag-location)_).
 
 
-### 3.1. ID3v2 header {#section-3.1}
+### 3.1. ID3v2 header
 
 The first part of the [ID3v2](#1) tag is the 10 bytes tag header, laid out as follows:
 
@@ -72,20 +72,20 @@ The first three bytes of the tag are always `"ID3"`, to indicate that this is an
 The version is followed by the [ID3v2](#1)] flags field, of which currently four flags are used.
 
 - a - Unsynchronisation  
-    Bit 7 in the `ID3v2_flags` indicates whether or not unsynchronisation is applied on all frames (see section _[6.1](#section-6.1)_ for details); a set bit indicates usage.
+    Bit 7 in the `ID3v2_flags` indicates whether or not unsynchronisation is applied on all frames (see section _[6.1](#61-the-unsynchronization-scheme)_ for details); a set bit indicates usage.
 
 - b - Extended header  
-    The second bit (bit 6) indicates whether or not the header is followed by an extended header. The extended header is described in section _[3.2](#section-3.2)_. A set bit indicates the presence of an extended header.
+    The second bit (bit 6) indicates whether or not the header is followed by an extended header. The extended header is described in section _[3.2](#32-extended-header)_. A set bit indicates the presence of an extended header.
 
 - c - Experimental indicator  
     The third bit (bit 5) is used as an _experimental indicator_. This flag SHALL always be set when the tag is in an experimental stage.
 
 - d - Footer present  
-    Bit 4 indicates that a footer section (detailed in _section [3.4](#section-3.4)_) is present at the very end of the tag. A set bit indicates the presence of a footer.
+    Bit 4 indicates that a footer section (detailed in _section [3.4](#34-id3v2-footer)_) is present at the very end of the tag. A set bit indicates the presence of a footer.
 
 All the other flags MUST be cleared. If one of these undefined flags are set, the tag might not be readable for a parser that does not know the flags function.
 
-The [ID3v2](#1) tag size is stored as a 32 bits synchsafe integer (detailed in _section [6.2](#section-6.2)_), making a total of 28 effective bits (representing up to 256MB).
+The [ID3v2](#1) tag size is stored as a 32 bits synchsafe integer (detailed in _section [6.2](#62-synchsafe-integers)_), making a total of 28 effective bits (representing up to 256MB).
 
 The [ID3v2](#1) tag size is the sum of the byte length of the extended header, the padding and the frames after unsynchronisation. If a footer is present this equals to `(total_size - 20)` bytes, otherwise `(total_size - 10)` bytes.
 
@@ -96,7 +96,7 @@ An [ID3v2](#1) tag can be detected with the following pattern:
 Where `yy` is less than `$FF`, `xx` is the 'flags' byte and `zz` is less than `$80`.
 
 
-### 3.2. Extended header {#section-3.2}
+### 3.2. Extended header
 
 The extended header contains information that can provide further insight in the structure of the tag, but is not vital to the correct parsing of the tag information; hence the extended header is optional.
 
@@ -160,12 +160,12 @@ Every set flag's data starts with a length byte, which contains a value between 
         - `11`, all images are exactly 64x64 pixels, unless required otherwise.
 
 
-### 3.3. Padding {#section-3.3}
+### 3.3. Padding
 
 It is OPTIONAL to include padding after the final frame (at the end of the ID3 tag), making the size of all the frames together smaller than the size given in the tag header. A possible purpose of this padding is to allow for adding a few additional frames or enlarge existing frames within the tag without having to rewrite the entire file. The value of the padding bytes must be `$00`. A tag MUST NOT have any padding between the frames or between the tag header and the frames. Furthermore it MUST NOT have any padding when a tag footer is added to the tag.
 
 
-### 3.4. ID3v2 footer {#section-3.4}
+### 3.4. ID3v2 footer
 
 To speed up the process of locating an [ID3v2](#1) tag when searching from the end of a file, a footer can be added to the tag. It is REQUIRED to add a footer to an appended tag, i.e. a tag located after all audio data. The footer is a copy of the header, but with a different identifier.
 
@@ -176,8 +176,8 @@ To speed up the process of locating an [ID3v2](#1) tag when searching from the e
 
 
 
-4. ID3v2 frame overview {#section_4}
-------------------------------------
+4. ID3v2 frame overview
+-----------------------
 
 All [ID3v2](#1) frames consists of one frame header followed by one or more fields containing the actual information. The header is always 10 bytes and laid out as follows:
 
@@ -189,7 +189,7 @@ The `frame_ID` is made out of the characters capital `A-Z` and `0-9`. Identifier
 
 The `frame_ID` is followed by a size descriptor containing the size of the data in the final frame, after encryption, compression and unsynchronisation. The size is excluding the frame header (`total_frame_size - 10` bytes) and stored as a 32 bits synchsafe integer.
 
-In the frame header the size descriptor is followed by two flag bytes. These flags are described in _section [4.1](#section-4.1)_.
+In the frame header the size descriptor is followed by two flag bytes. These flags are described in _section [4.1](#41-frame-header-flags)_.
 
 There is no fixed order of the frames' appearance in the tag, although it is desired that the frames are arranged in order of significance concerning the recognition of the file. An example of such order: `UFID`, `TIT2`, `MCDI`, `TRCK` ...
 
@@ -215,7 +215,7 @@ All URLs MAY be relative, e.g. "picture.png", "../doc.txt".
 If a frame is longer than it should be, e.g. having more fields than specified in this document, that indicates that additions to the frame have been made in a later version of the [ID3v2](#1) standard. This is reflected by the revision number in the header of the tag.
 
 
-### 4.1. Frame header flags {#section-4.1}
+### 4.1. Frame header flags
 
 In the frame header the size descriptor is followed by two flag bytes. All unused flags MUST be cleared. The first byte is for 'status messages' and the second byte is a format description. If an unknown flag is set in the first byte the frame MUST NOT be changed without that bit cleared. If an unknown flag is set in the second byte the frame is likely to not be readable. Some flags in the second byte indicates that extra information is added to the header. These fields of extra information is ordered as the flags that indicates them. The flags field is defined as follows (l and o left out because their resemblance to one and zero):
 
@@ -225,7 +225,7 @@ Some frame format flags indicate that additional information fields are added to
 
 The default status flags setting for a frame is, unless stated otherwise, 'preserved if tag is altered' and 'preserved if file is altered', i.e. %00000000.
 
-#### 4.1.1. Frame status flags {#section-4.1.1}
+#### 4.1.1. Frame status flags
 
 - **`a`** tag alter preservation  
     This flag tells the tag parser what to do with this frame if it is unknown and the tag is altered in any way. This applies to all kinds of alterations, including adding more padding and reordering the frames.
@@ -242,7 +242,7 @@ The default status flags setting for a frame is, unless stated otherwise, 'prese
 - **`c`** read only  
     This flag, if set, tells the software that the contents of this frame are intended to be read only. Changing the contents might break something, e.g. a signature. If the contents are changed, without knowledge of why the frame was flagged read only and without taking the proper means to compensate, e.g. recalculating the signature, the bit MUST be cleared.
 
-#### 4.1.2. Frame format flags {#section-4.1.2}
+#### 4.1.2. Frame format flags
 
 - **`h`** grouping identity  
     This flag indicates whether or not this frame belongs in a group with other frames. If set, a group identifier byte is added to the frame. Every frame with the same group identifier belongs to the same group.
@@ -276,8 +276,8 @@ The default status flags setting for a frame is, unless stated otherwise, 'prese
 
 
 
-5. Tag location {#section-5}
-----------------------------
+5. Tag location
+---------------
 
 The default location of an [ID3v2](#1) tag is prepended to the audio so that players can benefit from the information when the data is streamed. It is however possible to append the tag, or make a prepend/append combination. When deciding upon where an unembedded tag should be located, the following order of preference SHOULD be considered.
 
@@ -287,16 +287,16 @@ The default location of an [ID3v2](#1) tag is prepended to the audio so that pla
 
 In case 2 and 3 the tag can simply be appended if no other known tags are present. The suggested method to find [ID3v2](#1) tags are:
    
-1. Look for a prepended tag using the pattern found in _section [3.1](#section-3.1)_,
+1. Look for a prepended tag using the pattern found in _section [3.1](#31-id3v2-header)_,
 2. if a SEEK frame was found, use its values to guide further searching,
 3. look for a tag footer, scanning from the back of the file.
 
-For every new tag that is found, the old tag should be discarded unless the update flag in the extended header (detailed in _section [3.2](#section-3.2)_) is set.
+For every new tag that is found, the old tag should be discarded unless the update flag in the extended header (detailed in _section [3.2](#32-extended-header)_) is set.
 
 
 
-6. Unsynchronisation {#section-6}
----------------------------------
+6. Unsynchronisation
+--------------------
 
 The only purpose of unsynchronisation is to make the [ID3v2](#1) tag as compatible as possible with existing software and hardware. There is no use in 'unsynchronising' tags if the file is only to be processed only by [ID3v2](#1) aware software and hardware. Unsynchronisation is only useful with tags in MPEG 1/2 layer I, II and III, MPEG 2.5 and AAC files.
 
@@ -315,14 +315,14 @@ This has the side effect that all `$FF 00` combinations have to be altered, so t
 
 To indicate usage of the unsynchronisation, the unsynchronisation flag in the frame header should be set. This bit MUST be set if the frame was altered by the unsynchronisation and SHOULD NOT be set if unaltered. If all frames in the tag are unsynchronised the unsynchronisation flag in the tag header SHOULD be set. It MUST NOT be set if the tag has a frame which is not unsynchronised.
 
-Assume the first byte of the audio to be `$FF`. The special case when the last byte of the last frame is `$FF` and no padding nor footer is used will then introduce a false synchronisation. This can be solved by adding a footer, adding padding or unsynchronising the frame and add `$00` to the end of the frame data, thus adding more byte to the frame size than a normal unsynchronisation would. Although not preferred, it is allowed to apply the last method on all frames ending with $FF.
+Assume the first byte of the audio to be `$FF`. The special case when the last byte of the last frame is `$FF` and no padding nor footer is used will then introduce a false synchronisation. This can be solved by adding a footer, adding padding or unsynchronising the frame and add `$00` to the end of the frame data, thus adding more byte to the frame size than a normal unsynchronisation would. Although not preferred, it is allowed to apply the last method on all frames ending with `$FF`.
 
 It is preferred that the tag is either completely unsynchronised or not unsynchronised at all. A completely unsynchronised tag has no  false synchonisations in it, as defined above, and does not end with `$FF`. A completely non-unsynchronised tag contains no unsynchronised frames, and thus the unsynchronisation flag in the header is cleared.
 
 Do bear in mind, that if compression or encryption is used, the unsynchronisation scheme MUST be applied afterwards. When decoding an unsynchronised frame, the unsynchronisation scheme MUST be reversed first, encryption and decompression afterwards.
 
 
-### 6.2. Synchsafe integers {#section-6.2}
+### 6.2. Synchsafe integers
 
 In some parts of the tag it is inconvenient to use the unsychronisation scheme because the size of unsynchronised data is not known in advance, which is particularly problematic with size descriptors. The solution in [ID3v2](#1) is to use synchsafe integers, in which there can never be any false synchs. Synchsafe integers are integers that keep its highest bit (bit 7) zeroed, making seven bits out of eight available. Thus a 32 bit synchsafe integer can store 28 bits of information.
    
@@ -332,7 +332,7 @@ Example:
 
 
 
-## 7. Copyright {#section-7}
+## 7. Copyright
 
 Copyright (C) Martin Nilsson 2000. All Rights Reserved.
 
@@ -344,7 +344,7 @@ This document and the information contained herein is provided on an 'AS IS' bas
 
 
 
-### 8. References {#section-8}
+### 8. References
 
 1. <a name="1"></a> [ID3v2], Martin Nilsson, 'ID3v2 informal standard', http://www.id3.org/id3v2.3.0.txt
 
@@ -378,8 +378,8 @@ Technical committee / subcommittee: JTC 1 / SC 29 and ISO/IEC DIS 13818-3
 
 
 
-9. Author's Address {#section-9}
---------------------------------
+Appendix A - Author's Address
+-----------------------------
 
 Written by Martin Nilsson
 
