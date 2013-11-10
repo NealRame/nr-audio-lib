@@ -13,7 +13,7 @@ Distribution of this document is unlimited.
 1. Abstract
 -----------
 
-This document describes the main structure of ID3v2.4.0, which is a revised version of the [ID3v2](#1) informal standard [ID3v2](#1) version 2.3.0. The [ID3v2](#1) offers a flexible way of storing audio meta information within the audio file itself. The information may be technical information, such as equalization curves, as well as title, performer, copyright etc.
+This document describes the main structure of ID3v2.4.0, which is a revised version of the ID3v2 informal standard ID3v2 version 2.3.0. The ID3v2 offers a flexible way of storing audio meta information within the audio file itself. The information may be technical information, such as equalization curves, as well as title, performer, copyright etc.
 
 ID3v2.4.0 is meant to be as close as possible to ID3v2.3.0 in order to allow for implementations to be revised as easily as possible.
 
@@ -33,11 +33,11 @@ The keywords **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **S
 3. ID3v2 overview
 -----------------
 
-[ID3v2](#1) is a general tagging format for audio, which makes it possible to store meta data about the audio inside the audio file itself. The ID3 tag described in this document is mainly targeted at files encoded with [MPEG-1/2 layer I](#3), [MPEG-1/2 layer II](#3), [MPEG-1/2 layer III](#3) and [MPEG-2.5](#3), but may work with other types of encoded audio or as a stand alone format for audio meta data.
+ID3v2 is a general tagging format for audio, which makes it possible to store meta data about the audio inside the audio file itself. The ID3 tag described in this document is mainly targeted at files encoded with [MPEG-1/2 layer I](#3), [MPEG-1/2 layer II](#3), [MPEG-1/2 layer III](#3) and [MPEG-2.5](#3), but may work with other types of encoded audio or as a stand alone format for audio meta data.
 
-[ID3v2](#1) is designed to be as flexible and expandable as possible to meet new meta information needs that might arise. To achieve that [ID3v2](#1) is constructed as a container for several information blocks, called frames, whose format need not be known to the software that encounters them. At the start of every frame is an unique and predefined identifier, a size descriptor that allows software to skip unknown frames and a flags field. The flags describes encoding details and if the frame should remain in the tag, should it be unknown to the software, if the file is altered.
+ID3v2 is designed to be as flexible and expandable as possible to meet new meta information needs that might arise. To achieve that ID3v2 is constructed as a container for several information blocks, called frames, whose format need not be known to the software that encounters them. At the start of every frame is an unique and predefined identifier, a size descriptor that allows software to skip unknown frames and a flags field. The flags describes encoding details and if the frame should remain in the tag, should it be unknown to the software, if the file is altered.
 
-The bitorder in [ID3v2](#1) is most significant bit first (MSB). The byteorder in multibyte numbers is most significant byte first (e.g. `$12345678` would be encoded `$12 34 56 78`), also known as big endian and network byte order.
+The bitorder in ID3v2 is most significant bit first (MSB). The byteorder in multibyte numbers is most significant byte first (e.g. `$12345678` would be encoded `$12 34 56 78`), also known as big endian and network byte order.
 
 Overall tag structure:
 
@@ -60,16 +60,16 @@ In general, padding and footer are mutually exclusive (see details in _sections 
 
 ### 3.1. ID3v2 header
 
-The first part of the [ID3v2](#1) tag is the 10 bytes tag header, laid out as follows:
+The first part of the ID3v2 tag is the 10 bytes tag header, laid out as follows:
 
-    id3v2_file_identifier      "ID3"
-    id3v2_version              $04 00
-    id3v2_flags                %abcd0000
-    id3v2_size                 4 * %0xxxxxxx
+    id3v2_file_identifier       "ID3"
+    id3v2_version               $04 00
+    id3v2_flags                 %abcd0000
+    id3v2_size                  4 * %0xxxxxxx
 
-The first three bytes of the tag are always `"ID3"`, to indicate that this is an [ID3v2](#1) tag, directly followed by the two version bytes. The first byte of [ID3v2](#1) version is its major version, while the second byte is its revision number. In this case this is ID3v2.4.0. All revisions are backwards compatible while major versions are not. If software with ID3v2.4.0 and below support should encounter version five or higher it should simply ignore the whole tag. Version or revision will never be `$FF`.
+The first three bytes of the tag are always `"ID3"`, to indicate that this is an ID3v2 tag, directly followed by the two version bytes. The first byte of ID3v2 version is its major version, while the second byte is its revision number. In this case this is ID3v2.4.0. All revisions are backwards compatible while major versions are not. If software with ID3v2.4.0 and below support should encounter version five or higher it should simply ignore the whole tag. Version or revision will never be `$FF`.
 
-The version is followed by the [ID3v2](#1) flags field, of which currently four flags are used.
+The version is followed by the ID3v2 flags field, of which currently four flags are used.
 
 - **`a`** unsynchronization  
     Bit 7 in the `id3v2_flags` indicates whether or not unsynchronisation is applied on all frames (see section _[6.1](#61-the-unsynchronization-scheme)_ for details); a set bit indicates usage.
@@ -85,11 +85,11 @@ The version is followed by the [ID3v2](#1) flags field, of which currently four 
 
 All the other flags MUST be cleared. If one of these undefined flags are set, the tag might not be readable for a parser that does not know the flags function.
 
-The [ID3v2](#1) tag size is stored as a 32 bits synchsafe integer (detailed in _section [6.2](#62-synchsafe-integers)_), making a total of 28 effective bits (representing up to 256MB).
+The ID3v2 tag size is stored as a 32 bits synchsafe integer (detailed in _section [6.2](#62-synchsafe-integers)_), making a total of 28 effective bits (representing up to 256MB).
 
-The [ID3v2](#1) tag size is the sum of the byte length of the extended header, the padding and the frames after unsynchronisation. If a footer is present this equals to `(total_size - 20)` bytes, otherwise `(total_size - 10)` bytes.
+The ID3v2 tag size is the sum of the byte length of the extended header, the padding and the frames after unsynchronisation. If a footer is present this equals to `(total_size - 20)` bytes, otherwise `(total_size - 10)` bytes.
 
-An [ID3v2](#1) tag can be detected with the following pattern:
+An ID3v2 tag can be detected with the following pattern:
 
     $49 44 33 yy yy xx zz zz zz zz
 
@@ -100,11 +100,11 @@ Where `yy` is less than `$FF`, `xx` is the 'flags' byte and `zz` is less than `$
 
 The extended header contains information that can provide further insight in the structure of the tag, but is not vital to the correct parsing of the tag information; hence the extended header is optional.
 
-    extended_header_size    4 * %0xxxxxxx
-    number_of_flag_bytes    $01
-    extended_flags          $xx
+    extended_header_size        4 * %0xxxxxxx
+    number_of_flag_bytes        $01
+    extended_flags              $xx
 
-Where the `Extended header size` is the size of the whole extended header, stored as a 32 bits synchsafe integer. An extended header can thus never have a size of fewer than six bytes.
+Where the `extended_header_size` is the size of the whole extended header, stored as a 32 bits synchsafe integer. An extended header can thus never have a size of fewer than six bytes.
 
 The extended flags field, with its size described by `number_of_flag_bytes`, is defined as: 
 
@@ -126,7 +126,7 @@ Every set flag's data starts with a length byte, which contains a value between 
         total_frame_CRC         5 * %0xxxxxxx
 
  - **`d`** tag restrictions  
-    For some applications it might be desired to restrict a tag in more ways than imposed by the [ID3v2](#1) specification. Note that the presence of these restrictions does not affect how the tag is decoded, merely how it was restricted before encoding. If this flag is set the tag is restricted as follows:
+    For some applications it might be desired to restrict a tag in more ways than imposed by the ID3v2 specification. Note that the presence of these restrictions does not affect how the tag is decoded, merely how it was restricted before encoding. If this flag is set the tag is restricted as follows:
 
         flag_data_length        $01
         restrictions            %ppqrrstt
@@ -167,7 +167,7 @@ It is OPTIONAL to include padding after the final frame (at the end of the ID3 t
 
 ### 3.4. ID3v2 footer
 
-To speed up the process of locating an [ID3v2](#1) tag when searching from the end of a file, a footer can be added to the tag. It is REQUIRED to add a footer to an appended tag, i.e. a tag located after all audio data. The footer is a copy of the header, but with a different identifier.
+To speed up the process of locating an ID3v2 tag when searching from the end of a file, a footer can be added to the tag. It is REQUIRED to add a footer to an appended tag, i.e. a tag located after all audio data. The footer is a copy of the header, but with a different identifier.
 
     id3v2_file_identifier      "3DI"
     id3v2_version              $04 00
@@ -179,7 +179,7 @@ To speed up the process of locating an [ID3v2](#1) tag when searching from the e
 4. ID3v2 frame overview
 -----------------------
 
-All [ID3v2](#1) frames consists of one frame header followed by one or more fields containing the actual information. The header is always 10 bytes and laid out as follows:
+All ID3v2 frames consists of one frame header followed by one or more fields containing the actual information. The header is always 10 bytes and laid out as follows:
 
     frame_id            $xx xx xx xx
     frame_size          4 * %0xxxxxxx
@@ -212,7 +212,7 @@ The three byte language field, present in several frames, is used to describe th
 
 All URLs MAY be relative, e.g. "picture.png", "../doc.txt".
 
-If a frame is longer than it should be, e.g. having more fields than specified in this document, that indicates that additions to the frame have been made in a later version of the [ID3v2](#1) standard. This is reflected by the revision number in the header of the tag.
+If a frame is longer than it should be, e.g. having more fields than specified in this document, that indicates that additions to the frame have been made in a later version of the ID3v2 standard. This is reflected by the revision number in the header of the tag.
 
 
 ### 4.1. Frame header flags
@@ -279,13 +279,13 @@ The default status flags setting for a frame is, unless stated otherwise, 'prese
 5. Tag location
 ---------------
 
-The default location of an [ID3v2](#1) tag is prepended to the audio so that players can benefit from the information when the data is streamed. It is however possible to append the tag, or make a prepend/append combination. When deciding upon where an unembedded tag should be located, the following order of preference SHOULD be considered.
+The default location of an ID3v2 tag is prepended to the audio so that players can benefit from the information when the data is streamed. It is however possible to append the tag, or make a prepend/append combination. When deciding upon where an unembedded tag should be located, the following order of preference SHOULD be considered.
 
 1. Prepend the tag,
 2. prepend a tag with all vital information and add a second tag at the end of the file, before tags from other tagging systems. The first tag is required to have a SEEK frame,
 3. add a tag at the end of the file, before tags from other tagging systems.
 
-In case 2 and 3 the tag can simply be appended if no other known tags are present. The suggested method to find [ID3v2](#1) tags are:
+In case 2 and 3 the tag can simply be appended if no other known tags are present. The suggested method to find ID3v2 tags are:
    
 1. Look for a prepended tag using the pattern found in _section [3.1](#31-id3v2-header)_,
 2. if a SEEK frame was found, use its values to guide further searching,
@@ -298,7 +298,7 @@ For every new tag that is found, the old tag should be discarded unless the upda
 6. Unsynchronisation
 --------------------
 
-The only purpose of unsynchronisation is to make the [ID3v2](#1) tag as compatible as possible with existing software and hardware. There is no use in 'unsynchronising' tags if the file is only to be processed only by [ID3v2](#1) aware software and hardware. Unsynchronisation is only useful with tags in MPEG 1/2 layer I, II and III, MPEG 2.5 and AAC files.
+The only purpose of unsynchronisation is to make the ID3v2 tag as compatible as possible with existing software and hardware. There is no use in 'unsynchronising' tags if the file is only to be processed only by ID3v2 aware software and hardware. Unsynchronisation is only useful with tags in MPEG 1/2 layer I, II and III, MPEG 2.5 and AAC files.
 
 
 ### 6.1. The unsynchronisation scheme {#section-6.1}
@@ -324,7 +324,7 @@ Do bear in mind, that if compression or encryption is used, the unsynchronisatio
 
 ### 6.2. Synchsafe integers
 
-In some parts of the tag it is inconvenient to use the unsychronisation scheme because the size of unsynchronised data is not known in advance, which is particularly problematic with size descriptors. The solution in [ID3v2](#1) is to use synchsafe integers, in which there can never be any false synchs. Synchsafe integers are integers that keep its highest bit (bit 7) zeroed, making seven bits out of eight available. Thus a 32 bit synchsafe integer can store 28 bits of information.
+In some parts of the tag it is inconvenient to use the unsychronisation scheme because the size of unsynchronised data is not known in advance, which is particularly problematic with size descriptors. The solution in ID3v2 is to use synchsafe integers, in which there can never be any false synchs. Synchsafe integers are integers that keep its highest bit (bit 7) zeroed, making seven bits out of eight available. Thus a 32 bit synchsafe integer can store 28 bits of information.
    
 Example:
    
